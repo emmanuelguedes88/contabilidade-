@@ -229,7 +229,6 @@
                 const expenseCats = Object.keys(categories).filter(c => c !== 'Receita');
                 categoryOptions = expenseCats.map(c => `<option value="${c}" ${(transaction?.category || category) === c ? 'selected' : ''}>${c}</option>`).join('');
             }
-            // CORREÇÃO: Usar new Date() para criar um objeto Date a partir do valor do input, que está no formato 'YYYY-MM-DD'.
             const content = `<form id="transaction-form" class="space-y-4" data-type="${type}" ${isEdit ? `data-edit-id="${transaction.id}"` : ''}><input name="description" value="${transaction?.description || ''}" required placeholder="Descrição" class="w-full p-2 rounded-lg"><select name="category" required class="w-full p-2 rounded-lg">${categoryOptions}</select><input name="amount" value="${transaction?.amount || ''}" type="number" step="0.01" min="0.01" required placeholder="Valor" class="w-full p-2 rounded-lg"><input name="date" value="${dateValue}" type="date" required class="w-full p-2 rounded-lg"><div class="flex justify-end pt-4"><button type="submit" class="py-2 px-4 rounded-lg bg-cyan-600 text-white font-bold btn-glow">${isEdit ? 'Salvar' : 'Adicionar'}</button></div></form>`;
             renderModalShell(`${isEdit ? 'Editar' : 'Adicionar'} ${isIncome ? 'Receita' : 'Despesa'}`, content);
         }
@@ -249,7 +248,6 @@
             modalContainer.addEventListener('submit', (e) => {
                 e.preventDefault(); if (e.target.id !== 'transaction-form') return;
                 const form = e.target, isEdit = !!form.dataset.editId;
-                // CORREÇÃO: Construir a data em UTC para evitar problemas de fuso horário que faziam as transações "desaparecer".
                 const dateParts = form.date.value.split('-');
                 const correctedDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
                 const data = { description: form.description.value, category: form.category.value, amount: parseFloat(form.amount.value), date: correctedDate, type: form.dataset.type };
@@ -297,30 +295,24 @@
         }
         
         async function main() {
-            // CORREÇÃO: Usar onAuthStateChanged como a única fonte da verdade.
             onAuthStateChanged(auth, async (user) => {
-                // Tenta fazer login com o token do ambiente, se existir e ainda não houver utilizador.
-                if (!user && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                let finalUser = user;
+                // Se não houver utilizador, tenta fazer login com o token do ambiente
+                if (!finalUser && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        // A função será re-chamada pelo onAuthStateChanged com o novo utilizador, então paramos aqui.
-                        return;
+                        const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                        finalUser = userCredential.user;
                     } catch (err) {
                         console.error("Falha na autenticação inicial com token:", err);
-                        // Se o token falhar, a função continua e mostra o ecrã de login.
                     }
                 }
                 
                 initialLoader.classList.add('hidden');
 
-                const finalUser = auth.currentUser; // Verifica novamente o utilizador após a tentativa de login com token.
-
                 if (finalUser && !finalUser.isAnonymous) {
-                    // Se existe um utilizador, inicializa a aplicação principal.
                     initializeMainUI(appId, finalUser, () => fetchAndRenderTransactions(finalUser.uid));
                     fetchAndRenderTransactions(finalUser.uid);
                 } else {
-                    // Se NÃO existe utilizador, desliga o listener de transações e mostra o login.
                     if (unsubscribeTransactions) {
                         unsubscribeTransactions();
                         unsubscribeTransactions = null;
