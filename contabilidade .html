@@ -214,7 +214,12 @@
                 if (e.target.dataset.action === 'remove-supermarket-item') { items.splice(parseInt(e.target.dataset.index), 1); renderItems(); }
                 else if (e.target.id === 'add-supermarket-total-to-expenses') {
                     const total = items.reduce((t, i) => t + i.subtotal, 0);
-                    if (total > 0) { addTransaction(currentAppId, currentUserId, { description: 'Compras de Supermercado', category: 'Alimentação', amount: total, date: new Date(), type: 'despesa', items: items }); modalContainer.innerHTML = ''; } 
+                    if (total > 0) { 
+                        const today = new Date();
+                        const correctedDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                        addTransaction(currentAppId, currentUserId, { description: 'Compras de Supermercado', category: 'Alimentação', amount: total, date: correctedDate, type: 'despesa', items: items }); 
+                        modalContainer.innerHTML = ''; 
+                    } 
                     else { alert("A lista está vazia."); }
                 }
             });
@@ -295,23 +300,19 @@
         }
         
         async function main() {
-            onAuthStateChanged(auth, async (user) => {
-                let finalUser = user;
-                // Se não houver utilizador, tenta fazer login com o token do ambiente
-                if (!finalUser && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    try {
-                        const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
-                        finalUser = userCredential.user;
-                    } catch (err) {
-                        console.error("Falha na autenticação inicial com token:", err);
-                    }
-                }
-                
-                initialLoader.classList.add('hidden');
+            let isInitialAuthTokenProcessed = false;
 
-                if (finalUser && !finalUser.isAnonymous) {
-                    initializeMainUI(appId, finalUser, () => fetchAndRenderTransactions(finalUser.uid));
-                    fetchAndRenderTransactions(finalUser.uid);
+            onAuthStateChanged(auth, (user) => {
+                // Se o login com token ainda não foi processado, não faz nada.
+                if (!isInitialAuthTokenProcessed && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    return;
+                }
+
+                initialLoader.classList.add('hidden');
+                
+                if (user && !user.isAnonymous) {
+                    initializeMainUI(appId, user, () => fetchAndRenderTransactions(user.uid));
+                    fetchAndRenderTransactions(user.uid);
                 } else {
                     if (unsubscribeTransactions) {
                         unsubscribeTransactions();
@@ -321,6 +322,25 @@
                     renderAuthScreen('login');
                 }
             });
+
+            // Lida com o token de autenticação inicial do ambiente
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                }
+            } catch (err) {
+                console.error("Falha na autenticação com token:", err);
+            } finally {
+                // Sinaliza que a tentativa de login com token terminou (bem-sucedida ou não).
+                isInitialAuthTokenProcessed = true;
+                // Força uma verificação do estado de autenticação para garantir que a UI correta é exibida.
+                const currentUser = auth.currentUser;
+                if (!currentUser) {
+                    initialLoader.classList.add('hidden');
+                    hideMainUI();
+                    renderAuthScreen('login');
+                }
+            }
         }
         
         main();
