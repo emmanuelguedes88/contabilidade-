@@ -9,258 +9,344 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-body{font-family:'Poppins',sans-serif;background-color:#111827;background-image:radial-gradient(circle at top left,#0e7490,#111827 40%),radial-gradient(circle at bottom right,#059669,#111827 50%);background-attachment:fixed;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;color:#e5e7eb;}
-.hidden{display:none !important;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-15px) scale(0.95);}to{opacity:1;transform:translateY(0) scale(1);}}
-.fade-in{animation:fadeIn 0.5s ease-out forwards;}
-.glass-card{background:rgba(31,41,55,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 32px 0 rgba(0,0,0,0.37);}
-.btn-glow{transition:all 0.3s ease;position:relative;overflow:hidden;}
-.btn-glow:hover{box-shadow:0 0 15px 5px rgba(16,185,129,0.5);transform:translateY(-2px);}
-.modal-scrollbar::-webkit-scrollbar{width:8px;}
-.modal-scrollbar::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);border-radius:10px;}
-.modal-scrollbar::-webkit-scrollbar-thumb{background:rgba(13,148,136,0.7);border-radius:10px;}
-.modal-scrollbar::-webkit-scrollbar-thumb:hover{background:#0d9488;}
-.quick-add-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);transition:all 0.3s cubic-bezier(0.25,0.8,0.25,1);}
-.quick-add-card:hover{transform:translateY(-8px);box-shadow:0 20px 25px -5px rgba(0,0,0,0.3),0 10px 10px -5px rgba(0,0,0,0.2);}
-input,select{background-color:rgba(17,24,39,0.5);border:1px solid rgba(255,255,255,0.2);color:#fff;}
-input:focus,select:focus{outline:none;border-color:#14b8a6;box-shadow:0 0 10px 2px rgba(20,184,166,0.5);}
-input::placeholder{color:#9ca3af;}
-select{appearance:none;}
-.eye-icon{position:absolute;inset-y:0;right:0;display:flex;align-items:center;padding:0 0.75rem;color:#9ca3af;cursor:pointer;}
+body { 
+    font-family: 'Poppins', sans-serif; 
+    background-color: #111827;
+    background-image: radial-gradient(circle at top left, #0e7490, #111827 40%), radial-gradient(circle at bottom right, #059669, #111827 50%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #e5e7eb;
+}
+.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-15px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+.glass-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+.btn-glow { transition: all 0.3s ease; position: relative; overflow: hidden; }
+.btn-glow:hover { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5); transform: translateY(-2px); }
+.modal-scrollbar::-webkit-scrollbar { width: 8px; }
+.modal-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+.modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, 0.7); border-radius: 10px; }
+.modal-scrollbar::-webkit-scrollbar-thumb:hover { background: #0d9488; }
+.quick-add-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.quick-add-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2); }
+input, select {
+    background-color: rgba(17, 24, 39, 0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+}
+input:focus, select:focus {
+     outline: none;
+     border-color: #14b8a6;
+     box-shadow: 0 0 10px 2px rgba(20, 184, 166, 0.5);
+}
+input::placeholder { color: #9ca3af; }
+select { appearance: none; }
+.eye-icon { position: absolute; inset-y: 0; right: 0; display: flex; align-items: center; padding: 0 0.75rem; color: #9ca3af; cursor: pointer; }
+#addTransactionBtn { z-index: 40; }
 </style>
 </head>
 <body class="text-gray-200">
-<!-- LOADER -->
+
+<!-- Loader Inicial -->
 <div id="initialLoader" class="fixed inset-0 bg-[#111827] flex flex-col items-center justify-center z-50">
-<svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-<p id="loader-error" class="text-red-400 mt-4 hidden"></p>
+    <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <p id="loader-error" class="text-red-400 mt-4 hidden"></p>
 </div>
 
+<!-- Container de Auth -->
 <div id="authContainer"></div>
 
+<!-- Container Principal -->
 <div id="appContainer" class="hidden">
-<header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="flex justify-between items-center py-4">
-<div class="flex items-center space-x-3">
-<span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span>
-<h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1>
+    <header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span>
+                    <h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1>
+                </div>
+                <div class="flex items-center">
+                    <span id="userEmail" class="text-gray-400 text-sm hidden sm:block mr-4"></span>
+                    <button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="mb-8 space-y-6">
+            <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl">
+                <label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label>
+                <select id="month-filter" class="p-2 border-none rounded-lg"></select>
+                <select id="year-filter" class="p-2 border-none rounded-lg"></select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="bg-green-500/20 p-3 rounded-full"><span class="text-3xl">💰</span></div>
+                    <div><p class="text-sm text-gray-400">Receita do Mês</p><p id="summaryIncome" class="text-2xl font-bold text-green-400">R$ 0,00</p></div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="bg-red-500/20 p-3 rounded-full"><span class="text-3xl">💸</span></div>
+                    <div><p class="text-sm text-gray-400">Despesa do Mês</p><p id="summaryExpense" class="text-2xl font-bold text-red-400">R$ 0,00</p></div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="bg-cyan-500/20 p-3 rounded-full"><span class="text-3xl">🏦</span></div>
+                    <div><p class="text-sm text-gray-400">Saldo do Mês</p><p id="summaryBalance" class="text-2xl font-bold text-cyan-400">R$ 0,00</p></div>
+                </div>
+            </div>
+        </div>
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2>
+            <div id="transactionHistory" class="space-y-3">
+                <p id="no-transactions-msg" class="text-gray-500 text-center py-4 hidden">Nenhuma transação registada neste mês.</p>
+            </div>
+        </div>
+    </main>
 </div>
-<div class="flex items-center">
-<span id="userEmail" class="text-gray-400 text-sm hidden sm:block mr-4"></span>
-<button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button>
-</div>
-</div>
-</div>
-</header>
 
-<main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-<div class="mb-8 space-y-6">
-<div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl">
-<label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label>
-<select id="month-filter" class="p-2 border-none rounded-lg"></select>
-<select id="year-filter" class="p-2 border-none rounded-lg"></select>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-green-500/20 p-3 rounded-full"><span class="text-3xl">💰</span></div><div><p class="text-sm text-gray-400">Receita do Mês</p><p id="summaryIncome" class="text-2xl font-bold text-green-400">R$ 0,00</p></div></div>
-<div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-red-500/20 p-3 rounded-full"><span class="text-3xl">💸</span></div><div><p class="text-sm text-gray-400">Despesa do Mês</p><p id="summaryExpense" class="text-2xl font-bold text-red-400">R$ 0,00</p></div></div>
-<div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-cyan-500/20 p-3 rounded-full"><span class="text-3xl">🏦</span></div><div><p class="text-sm text-gray-400">Saldo do Mês</p><p id="summaryBalance" class="text-2xl font-bold text-cyan-400">R$ 0,00</p></div></div>
-</div>
-</div>
-
-<div class="mb-8">
-<button data-action="show-income-modal" class="w-full mb-6 flex items-center justify-center space-x-3 bg-green-500 text-white font-bold py-4 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">➕</span><span>Adicionar Receita</span></button>
-<h3 class="text-xl font-bold text-white mb-4">Adicionar Despesa Rápida</h3>
-<div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div>
-</div>
-
-<div>
-<h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2>
-<div id="transactionHistory" class="space-y-3">
-<p id="no-transactions-msg" class="text-gray-500 text-center py-4 hidden">Nenhuma transação registada neste mês.</p>
-</div>
-</div>
-</main>
-</div>
+<!-- Botão Flutuante -->
+<button id="addTransactionBtn" class="fixed bottom-6 right-6 bg-cyan-500 text-white text-3xl font-bold w-16 h-16 rounded-full shadow-lg hover:bg-cyan-600 flex items-center justify-center">
+  +
+</button>
 
 <div id="modalContainer"></div>
 
 <script type="module">
-// ================== CONFIG ==================
-const categories = {
-'Receita': { icon: '💰' }, 'Moradia': { icon: '🏠' }, 'Alimentação': { icon: '🛒' },
-'Transporte': { icon: '🚗' }, 'Saúde': { icon: '💊' }, 'Lazer': { icon: '🎮' },
-'Água': { icon: '💧' }, 'Energia': { icon: '⚡️' }, 'Internet': { icon: '🌐' }, 'Outros': { icon: '📦' },
-};
-const formatCurrency = (v)=>(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-// ================== FIREBASE ==================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, deleteDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const firebaseConfig = typeof firebaseconfig!=='undefined'?JSON.parse(firebaseconfig):{};
+/* =========================
+   CONFIGURAÇÕES DO FIREBASE
+========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCxNNygCvK2xQeIymAZoo95ydb2l9l7O6E",
+  authDomain: "financeiro-ab215.firebaseapp.com",
+  projectId: "financeiro-ab215",
+  storageBucket: "financeiro-ab215.firebasestorage.app",
+  messagingSenderId: "1074139488619",
+  appId: "1:1074139488619:web:4aee186cd13735839cec2e",
+  measurementId: "G-SDTX2HMTHX"
+};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-function getTransactionsCollection(userId){return collection(db,'transactions',userId,'items');}
-function onTransactionsUpdate(userId,year,month,callback){
-    const start = new Date(Date.UTC(year,month,1));
-    const end = new Date(Date.UTC(year,month+1,1));
-    const q = query(getTransactionsCollection(userId), where('date','>=',start), where('date','<',end));
-    return onSnapshot(q,snap=>{const txs=[];snap.forEach(doc=>txs.push({id:doc.id,...doc.data()}));callback(txs);});
-}
-async function addTransaction(appId,userId,data){await addDoc(getTransactionsCollection(userId),{...data,date:data.date,createdAt:serverTimestamp()});}
+/* =========================
+   CATEGORIAS E UTILITÁRIOS
+========================= */
+const categories = {
+    'Receita': { icon: '💰' }, 'Moradia': { icon: '🏠' }, 'Alimentação': { icon: '🛒' },
+    'Transporte': { icon: '🚗' }, 'Saúde': { icon: '💊' }, 'Lazer': { icon: '🎮' },
+    'Água': { icon: '💧' }, 'Energia': { icon: '⚡️' }, 'Internet': { icon: '🌐' }, 'Outros': { icon: '📦' }
+};
+const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// ================== AUTH ==================
+/* =========================
+   COLEÇÕES FIRESTORE
+========================= */
+function getTransactionsCollection(appId, uid) {
+    return collection(db, `users/${uid}/transactions`);
+}
+
+/* =========================
+   MODAL DE TRANSACÃO
+========================= */
+const modalContainer = document.getElementById('modalContainer');
+
+function openTransactionModal(transaction = null) {
+    modalContainer.innerHTML = `
+    <div id="transactionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 modal-scrollbar">
+      <div class="bg-gray-900 rounded-2xl p-6 w-11/12 max-w-md relative glass-card">
+        <h2 class="text-xl font-bold mb-4">Nova Transação</h2>
+        <form id="transactionForm" class="space-y-4">
+          <div>
+            <label class="block mb-1">Tipo</label>
+            <select id="type" required class="w-full p-2 rounded-lg">
+              <option value="">Selecione</option>
+              <option value="Receita">Receita</option>
+              <option value="Despesa">Despesa</option>
+            </select>
+          </div>
+          <div>
+            <label class="block mb-1">Categoria</label>
+            <select id="category" required class="w-full p-2 rounded-lg">
+              ${Object.keys(categories).map(c => `<option value="${c}">${categories[c].icon} ${c}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block mb-1">Valor</label>
+            <input type="number" step="0.01" min="0" id="amount" required class="w-full p-2 rounded-lg" placeholder="0,00"/>
+          </div>
+          <div>
+            <label class="block mb-1">Data</label>
+            <input type="date" id="date" required class="w-full p-2 rounded-lg" value="${new Date().toISOString().split('T')[0]}"/>
+          </div>
+          <div class="flex justify-end space-x-2">
+            <button type="button" id="cancelTransactionBtn" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600">Cancelar</button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    `;
+    document.getElementById('transactionModal').addEventListener('click', e => { if(e.target.id === 'transactionModal') closeTransactionModal(); });
+    document.getElementById('cancelTransactionBtn').addEventListener('click', closeTransactionModal);
+    document.getElementById('transactionForm').addEventListener('submit', saveTransaction);
+}
+
+function closeTransactionModal() { modalContainer.innerHTML = ''; }
+
+/* =========================
+   FUNÇÃO SALVAR TRANSAÇÃO
+========================= */
+async function saveTransaction(e) {
+    e.preventDefault();
+    const type = document.getElementById('type').value;
+    const category = document.getElementById('category').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const date = document.getElementById('date').value;
+    const user = auth.currentUser;
+    if (!user) return alert('Usuário não autenticado');
+
+    await addDoc(getTransactionsCollection(app, user.uid), {
+        type, category, amount, date, createdAt: serverTimestamp()
+    });
+    closeTransactionModal();
+}
+
+/* =========================
+   BOTÃO FLUTUANTE
+========================= */
+document.getElementById('addTransactionBtn').addEventListener('click', () => openTransactionModal());
+
+/* =========================
+   AUTENTICAÇÃO
+========================= */
 const authContainer = document.getElementById('authContainer');
 const appContainer = document.getElementById('appContainer');
-let currentUser = null;
-
-function showAuth(){authContainer.innerHTML=`
-<div class="min-h-screen flex items-center justify-center p-4">
-<div class="glass-card p-8 rounded-2xl w-full max-w-md fade-in">
-<h2 class="text-2xl font-bold text-white mb-6">Entrar / Cadastrar</h2>
-<form id="loginForm" class="space-y-4">
-<input type="email" id="loginEmail" placeholder="Email" required>
-<div class="relative">
-<input type="password" id="loginPassword" placeholder="Senha" required>
-<span id="togglePwd" class="eye-icon">👁️</span>
-</div>
-<div class="flex justify-between items-center">
-<button type="submit" class="bg-cyan-500 text-white py-2 px-4 rounded-lg font-bold btn-glow">Entrar</button>
-<button type="button" id="signupBtn" class="text-sm text-gray-300 underline">Cadastrar</button>
-</div>
-</form>
-</div>
-</div>`;
-
-// toggle eye
-document.getElementById('togglePwd').addEventListener('click',()=>{
-const inp=document.getElementById('loginPassword');
-inp.type=inp.type==='password'?'text':'password';
+onAuthStateChanged(auth, user => {
+    if (user) {
+        authContainer.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        document.getElementById('userEmail').textContent = user.email;
+        listenTransactions(user.uid);
+    } else {
+        authContainer.innerHTML = `
+            <div class="flex items-center justify-center h-screen">
+                <form id="loginForm" class="bg-gray-900 p-8 rounded-2xl w-80 glass-card">
+                    <h2 class="text-2xl font-bold mb-4 text-white">Entrar</h2>
+                    <input type="email" id="loginEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg" required/>
+                    <input type="password" id="loginPassword" placeholder="Senha" class="w-full mb-3 p-2 rounded-lg" required/>
+                    <button type="submit" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white font-semibold">Entrar</button>
+                    <p class="mt-4 text-sm text-gray-400">Ainda não tem conta? <span id="showSignup" class="text-cyan-400 cursor-pointer">Cadastrar</span></p>
+                </form>
+            </div>
+        `;
+        document.getElementById('loginForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            await signInWithEmailAndPassword(auth, email, password).catch(err => alert(err.message));
+        });
+        document.getElementById('showSignup')?.addEventListener('click', showSignupForm);
+    }
 });
 
-// login
-document.getElementById('loginForm').addEventListener('submit', async e=>{
-e.preventDefault();
-try{const userCredential=await signInWithEmailAndPassword(auth,document.getElementById('loginEmail').value,document.getElementById('loginPassword').value);currentUser=userCredential.user;}catch(err){alert(err.message);}
+function showSignupForm() {
+    authContainer.innerHTML = `
+        <div class="flex items-center justify-center h-screen">
+            <form id="signupForm" class="bg-gray-900 p-8 rounded-2xl w-80 glass-card">
+                <h2 class="text-2xl font-bold mb-4 text-white">Cadastrar</h2>
+                <input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg" required/>
+                <input type="password" id="signupPassword" placeholder="Senha" class="w-full mb-3 p-2 rounded-lg" required/>
+                <button type="submit" class="w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white font-semibold">Cadastrar</button>
+                <p class="mt-4 text-sm text-gray-400">Já tem conta? <span id="showLogin" class="text-cyan-400 cursor-pointer">Entrar</span></p>
+            </form>
+        </div>
+    `;
+    document.getElementById('signupForm')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        await createUserWithEmailAndPassword(auth, email, password).catch(err => alert(err.message));
+    });
+    document.getElementById('showLogin')?.addEventListener('click', () => location.reload());
+}
+
+/* =========================
+   LOGOUT
+========================= */
+document.body.addEventListener('click', async e => {
+    if (e.target.dataset.action === 'logout') await signOut(auth);
 });
-// signup
-document.getElementById('signupBtn').addEventListener('click', async ()=>{
-try{const userCredential=await createUserWithEmailAndPassword(auth,document.getElementById('loginEmail').value,document.getElementById('loginPassword').value);currentUser=userCredential.user;}catch(err){alert(err.message);}
-});
+
+/* =========================
+   LISTENER DE TRANSAÇÕES
+========================= */
+function listenTransactions(uid) {
+    const q = query(getTransactionsCollection(app, uid));
+    onSnapshot(q, snapshot => {
+        const transactions = [];
+        snapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
+        renderTransactions(transactions);
+    });
 }
 
-onAuthStateChanged(auth,user=>{
-if(user){currentUser=user;authContainer.classList.add('hidden');appContainer.classList.remove('hidden');document.getElementById('userEmail').classList.remove('hidden');document.getElementById('userEmail').textContent=user.email;initApp();}
-else{appContainer.classList.add('hidden');authContainer.classList.remove('hidden');showAuth();}
-});
-
-// ================== APP ==================
-let txListener = null;
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-
-function populateFilters(){
-const monthSelect=document.getElementById('month-filter');
-const yearSelect=document.getElementById('year-filter');
-monthSelect.innerHTML='';yearSelect.innerHTML='';
-for(let i=0;i<12;i++){monthSelect.appendChild(new Option(new Date(0,i).toLocaleString('pt-BR',{month:'long'}),i));}
-for(let i=currentYear-5;i<=currentYear+1;i++){yearSelect.appendChild(new Option(i,i));}
-monthSelect.value=currentMonth;yearSelect.value=currentYear;
-monthSelect.addEventListener('change',()=>{currentMonth=parseInt(monthSelect.value);reloadTransactions();});
-yearSelect.addEventListener('change',()=>{currentYear=parseInt(yearSelect.value);reloadTransactions();});
+/* =========================
+   RENDER DE TRANSAÇÕES
+========================= */
+function renderTransactions(transactions) {
+    const container = document.getElementById('transactionHistory');
+    container.innerHTML = '';
+    if (!transactions.length) {
+        document.getElementById('no-transactions-msg').classList.remove('hidden');
+        updateSummary(transactions);
+        return;
+    }
+    document.getElementById('no-transactions-msg').classList.add('hidden');
+    transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+    transactions.forEach(tx => {
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center glass-card p-3 rounded-xl fade-in';
+        div.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">${categories[tx.category]?.icon || '❔'}</span>
+                <div>
+                    <p class="font-semibold">${tx.category}</p>
+                    <p class="text-gray-400 text-sm">${tx.date}</p>
+                </div>
+            </div>
+            <p class="${tx.type === 'Receita' ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(tx.amount)}</p>
+        `;
+        container.appendChild(div);
+    });
+    updateSummary(transactions);
 }
 
-function initApp(){
-populateFilters();
-setupQuickAdd();
-document.querySelector('[data-action="logout"]').addEventListener('click',()=>signOut(auth));
-reloadTransactions();
+/* =========================
+   RESUMO MÊS
+========================= */
+function updateSummary(transactions) {
+    const income = transactions.filter(t => t.type === 'Receita').reduce((acc, t) => acc + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'Despesa').reduce((acc, t) => acc + t.amount, 0);
+    document.getElementById('summaryIncome').textContent = formatCurrency(income);
+    document.getElementById('summaryExpense').textContent = formatCurrency(expense);
+    document.getElementById('summaryBalance').textContent = formatCurrency(income - expense);
 }
-
-function setupQuickAdd(){
-const container=document.getElementById('quick-add-container');
-container.innerHTML='';
-Object.keys(categories).filter(c=>c!=='Receita').forEach(cat=>{
-const btn=document.createElement('button');
-btn.className='quick-add-card p-3 rounded-lg flex flex-col items-center justify-center text-white text-center';
-btn.innerHTML=`<span class="text-2xl">${categories[cat].icon}</span><span class="mt-1 text-sm">${cat}</span>`;
-btn.addEventListener('click',()=>showTransactionModal('Despesa',cat));
-container.appendChild(btn);
-});
-}
-
-// ================== TRANSACTIONS ==================
-function reloadTransactions(){
-if(txListener)txListener();
-txListener=onTransactionsUpdate(currentUser.uid,currentYear,currentMonth,txs=>{
-updateSummary(txs);
-renderTransactions(txs);
-});
-}
-
-function updateSummary(txs){
-let income=0,expense=0;
-txs.forEach(t=>{if(t.type==='Receita')income+=t.value;else expense+=t.value;});
-document.getElementById('summaryIncome').textContent=formatCurrency(income);
-document.getElementById('summaryExpense').textContent=formatCurrency(expense);
-document.getElementById('summaryBalance').textContent=formatCurrency(income-expense);
-}
-
-function renderTransactions(txs){
-const container=document.getElementById('transactionHistory');
-container.innerHTML='';
-if(!txs.length){document.getElementById('no-transactions-msg').classList.remove('hidden');return;}
-document.getElementById('no-transactions-msg').classList.add('hidden');
-txs.sort((a,b)=>b.date-a.date);
-txs.forEach(tx=>{
-const div=document.createElement('div');
-div.className='glass-card p-4 rounded-xl flex justify-between items-center';
-div.innerHTML=`<div><p class="font-bold">${tx.title}</p><p class="text-sm text-gray-400">${tx.category} - ${new Date(tx.date.seconds*1000).toLocaleDateString()}</p></div>
-<div class="${tx.type==='Receita'?'text-green-400':'text-red-400'} font-bold">${formatCurrency(tx.value)}</div>`;
-container.appendChild(div);
-});
-}
-
-// ================== MODAL ==================
-const modalContainer=document.getElementById('modalContainer');
-function showTransactionModal(type='Receita',category='Receita'){
-modalContainer.innerHTML=`
-<div id="transactionModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 modal-scrollbar">
-<div class="glass-card p-6 rounded-2xl w-11/12 max-w-md relative fade-in">
-<h2 class="text-xl font-bold mb-4">${type==='Receita'?'Adicionar Receita':'Adicionar Despesa'}</h2>
-<form id="transactionForm" class="space-y-4">
-<input type="text" id="txTitle" placeholder="Título" class="w-full p-2 rounded-lg" required>
-<input type="number" step="0.01" id="txValue" placeholder="Valor" class="w-full p-2 rounded-lg" required>
-<select id="txCategory" class="w-full p-2 rounded-lg"></select>
-<input type="date" id="txDate" class="w-full p-2 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
-<div class="flex justify-end space-x-3">
-<button type="button" id="cancelBtn" class="bg-gray-600 px-4 py-2 rounded-lg">Cancelar</button>
-<button type="submit" class="bg-cyan-500 px-4 py-2 rounded-lg text-white font-bold">${type==='Receita'?'Adicionar':'Salvar'}</button>
-</div>
-</form>
-</div>
-</div>`;
-const catSelect=document.getElementById('txCategory');catSelect.innerHTML='';
-Object.keys(categories).forEach(c=>{const opt=new Option(c,c);if(c===category)opt.selected=true;catSelect.appendChild(opt);});
-document.getElementById('cancelBtn').addEventListener('click',()=>modalContainer.innerHTML='');
-document.getElementById('transactionForm').addEventListener('submit',async e=>{
-e.preventDefault();
-const title=document.getElementById('txTitle').value.trim();
-const value=parseFloat(document.getElementById('txValue').value);
-const category=document.getElementById('txCategory').value;
-const date=new Date(document.getElementById('txDate').value);
-if(!title||!value||!category||!date)return alert('Preencha todos os campos');
-try{await addTransaction('appId',currentUser.uid,{title,value,type,category,date});modalContainer.innerHTML='';}catch(err){alert('Erro: '+err.message);}
-});
-}
-
-// quick add receita
-document.querySelector('[data-action="show-income-modal"]').addEventListener('click',()=>showTransactionModal('Receita','Receita'));
 </script>
 </body>
 </html>
