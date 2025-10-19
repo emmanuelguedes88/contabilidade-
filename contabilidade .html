@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POF - Orçamento Familiar Divertido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #111827;
+            background-image: radial-gradient(circle at top left, #0e7490, #111827 40%), radial-gradient(circle at bottom right, #059669, #111827 50%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            color: #e5e7eb;
+        }
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        .glass-card {
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .btn-glow {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .modal-scrollbar::-webkit-scrollbar { width: 8px; }
+        .modal-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .modal-scrollbar::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, 0.7); border-radius: 10px; }
+        .modal-scrollbar::-webkit-scrollbar-thumb:hover { background: #0d9488; }
+        
+        .quick-add-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .quick-add-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
+        }
+        
+        input, select {
+            background-color: rgba(17, 24, 39, 0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        input:focus, select:focus {
+             outline: none;
+             border-color: #14b8a6;
+             box-shadow: 0 0 10px 2px rgba(20, 184, 166, 0.5);
+        }
+        input::placeholder { color: #9ca3af; }
+        select { appearance: none; }
+        .eye-icon { position: absolute; inset-y: 0; right: 0; display: flex; align-items: center; padding: 0 0.75rem; color: #9ca3af; cursor: pointer; }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div id="initialLoader" class="fixed inset-0 bg-[#111827] flex flex-col items-center justify-center z-50">
+        <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p id="loader-error" class="text-red-400 mt-4 hidden"></p>
+    </div>
+    
+    <div id="authContainer"></div>
+
+    <div id="appContainer" class="hidden">
+        <header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex justify-between items-center py-4"><div class="flex items-center space-x-3"><span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span><h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1></div><div class="flex items-center"><span id="userEmail" class="text-gray-400 text-sm hidden sm:block mr-4"></span><button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button></div></div></div></header>
+        <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <div class="mb-8 space-y-6">
+                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl"><label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label><select id="month-filter" class="p-2 border-none rounded-lg"></select><select id="year-filter" class="p-2 border-none rounded-lg"></select></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-green-500/20 p-3 rounded-full"><span class="text-3xl">💰</span></div><div><p class="text-sm text-gray-400">Receita do Mês</p><p id="summaryIncome" class="text-2xl font-bold text-green-400">R$ 0,00</p></div></div>
+                    <div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-red-500/20 p-3 rounded-full"><span class="text-3xl">💸</span></div><div><p class="text-sm text-gray-400">Despesa do Mês</p><p id="summaryExpense" class="text-2xl font-bold text-red-400">R$ 0,00</p></div></div>
+                    <div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-cyan-500/20 p-3 rounded-full"><span class="text-3xl">🏦</span></div><div><p class="text-sm text-gray-400">Saldo do Mês</p><p id="summaryBalance" class="text-2xl font-bold text-cyan-400">R$ 0,00</p></div></div>
+                </div>
+            </div>
+            <div class="mb-8"><button data-action="show-income-modal" class="w-full mb-6 flex items-center justify-center space-x-3 bg-green-500 text-white font-bold py-4 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">➕</span><span>Adicionar Receita</span></button><h3 class="text-xl font-bold text-white mb-4">Adicionar Despesa Rápida</h3><div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div></div>
+            <div><h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2><div id="transactionHistory" class="space-y-3"><p id="no-transactions-msg" class="text-gray-500 text-center py-4 hidden">Nenhuma transação registada neste mês.</p></div></div>
+        </main>
+    </div>
+    <div id="modalContainer"></div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, deleteDoc, updateDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // MÓDULO: CONFIG
+        const categories = {
+            'Receita': { icon: '💰' }, 'Moradia': { icon: '🏠' }, 'Alimentação': { icon: '🛒' }, 'Transporte': { icon: '🚗' }, 'Saúde': { icon: '💊' }, 'Lazer': { icon: '🎮' }, 'Água': { icon: '💧' }, 'Energia': { icon: '⚡️' }, 'Internet': { icon: '🌐' }, 'Outros': { icon: '📦' },
+        };
+        const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        // MÓDULO: FIREBASE
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        function getTransactionsCollection(appId, userId) { return collection(db, "artifacts", appId, "users", userId, "transactions"); }
+        function onTransactionsUpdate(appId, userId, year, month, callback) {
+            const startDate = new Date(Date.UTC(year, month, 1));
+            const endDate = new Date(Date.UTC(year, month + 1, 1)); 
+            const q = query(getTransactionsCollection(appId, userId), where("date", ">=", startDate), where("date", "<", endDate));
+            return onSnapshot(q, (snapshot) => callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })), null), (error) => callback([], error));
+        }
+        async function addTransaction(appId, userId, data) { await addDoc(getTransactionsCollection(appId, userId), { ...data, createdAt: serverTimestamp() }); }
+        async function updateTransaction(appId, userId, id, data) { await updateDoc(doc(db, "artifacts", appId, "users", userId, "transactions", id), data); }
+        async function deleteTransaction(appId, userId, id) { await deleteDoc(doc(db, "artifacts", appId, "users", userId, "transactions", id)); }
+
+        // MÓDULO: AUTH
+        const authContainer = document.getElementById('authContainer');
+        const loginTemplate = `<div class="min-h-screen flex items-center justify-center p-4"><div class="w-full max-w-md space-y-8 glass-card p-10 rounded-3xl fade-in"><div class="text-center"><h2 class="mt-6 text-4xl font-extrabold text-white">Bem-vindo!</h2><p class="mt-2 text-sm text-gray-400">A sua aventura financeira começa agora</p><p id="login-error-msg" class="mt-2 text-sm text-red-400 hidden"></p></div><form id="loginForm" class="mt-8 space-y-6"><div><input id="login-email" required class="w-full px-4 py-3 rounded-lg" placeholder="Email"></div><div class="relative"><input id="login-password" type="password" required class="w-full px-4 py-3 rounded-lg" placeholder="Senha"><span data-action="toggle-password" data-target="login-password" class="eye-icon"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></span></div><div class="flex items-center justify-end"><a href="#" id="forgotPasswordLink" class="text-sm font-medium text-cyan-400 hover:text-cyan-300">Esqueceu a senha?</a></div><button type="submit" class="w-full py-3 rounded-lg bg-cyan-600 text-white font-bold btn-glow">Entrar</button></form><p class="text-center text-sm text-gray-400">Novo por aqui? <button data-action="show-register" class="font-medium text-cyan-400 hover:text-cyan-300">Crie uma conta</button></p></div></div>`;
+        const registerTemplate = `<div class="min-h-screen flex items-center justify-center p-4"><div class="w-full max-w-md space-y-8 glass-card p-10 rounded-3xl fade-in"><div class="text-center"><h2 class="text-4xl font-extrabold text-white">Criar Conta</h2><p id="register-error-msg" class="mt-2 text-sm text-red-400 hidden"></p></div><form id="registerForm" class="mt-8 space-y-6"><div><input id="register-email" type="email" required class="w-full px-4 py-3 rounded-lg" placeholder="Email"></div><div class="relative"><input id="register-password" type="password" required class="w-full px-4 py-3 rounded-lg" placeholder="Senha (mín. 6 caracteres)"><span data-action="toggle-password" data-target="register-password" class="eye-icon"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></span></div><div class="relative"><input id="register-confirm-password" type="password" required class="w-full px-4 py-3 rounded-lg" placeholder="Confirmar Senha"><span data-action="toggle-password" data-target="register-confirm-password" class="eye-icon"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></span></div><button type="submit" class="w-full py-3 rounded-lg bg-cyan-600 text-white font-bold btn-glow">Registar</button></form><p class="text-center text-sm text-gray-400">Já tem conta? <button data-action="show-login" class="font-medium text-cyan-400 hover:text-cyan-300">Faça login</button></p></div></div>`;
+
+        function handleAuthError(error, elementId) {
+            const msgEl = document.getElementById(elementId);
+            let message = "Ocorreu um erro. Tente novamente.";
+            switch (error.code) {
+                case 'auth/invalid-email': message = 'Email inválido.'; break; case 'auth/user-not-found': message = 'Utilizador não encontrado.'; break; case 'auth/wrong-password': message = 'Senha incorreta.'; break; case 'auth/email-already-in-use': message = 'Este email já está em uso.'; break; case 'auth/weak-password': message = 'A senha deve ter pelo menos 6 caracteres.'; break; case 'auth/invalid-credential': message = 'Credenciais inválidas.'; break;
+            }
+            msgEl.textContent = message; msgEl.classList.remove('hidden');
+        }
+        function attachAuthListeners() {
+            authContainer.addEventListener('submit', async (e) => {
+                e.preventDefault(); const form = e.target;
+                if (form.id === 'loginForm') { try { await signInWithEmailAndPassword(auth, form.querySelector('#login-email').value, form.querySelector('#login-password').value); } catch (err) { handleAuthError(err, 'login-error-msg'); }
+                } else if (form.id === 'registerForm') {
+                    const pass = form.querySelector('#register-password').value, confirmPass = form.querySelector('#register-confirm-password').value;
+                    if (pass !== confirmPass) { handleAuthError({ code: '' }, 'register-error-msg'); document.getElementById('register-error-msg').textContent = 'As senhas não coincidem.'; return; }
+                    try { await createUserWithEmailAndPassword(auth, form.querySelector('#register-email').value, pass); } catch (err) { handleAuthError(err, 'register-error-msg'); }
+                }
+            });
+            authContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action], #forgotPasswordLink'); if (!target) return;
+                const action = target.dataset.action;
+                if (action === 'show-register') renderAuthScreen('register');
+                else if (action === 'show-login') renderAuthScreen('login');
+                else if (action === 'toggle-password') { const input = document.getElementById(target.dataset.target); input.type = input.type === 'password' ? 'text' : 'password'; }
+                else if (target.id === 'forgotPasswordLink') {
+                    const email = document.getElementById('login-email')?.value; if (!email) { alert("Por favor, insira o seu email."); return; }
+                    sendPasswordResetEmail(auth, email).then(() => alert("Email de redefinição enviado!")).catch(err => alert("Erro: " + err.message));
+                }
+            });
+        }
+        function renderAuthScreen(type = 'login') {
+            appContainer.classList.add('hidden'); authContainer.innerHTML = type === 'login' ? loginTemplate : registerTemplate; authContainer.classList.remove('hidden');
+            if (!authContainer.dataset.listenersAttached) { attachAuthListeners(); authContainer.dataset.listenersAttached = 'true'; }
+        }
+
+        // MÓDULO: UI
+        let currentAppId = null, currentUserId = null, selectedTransaction = null, allTransactions = [];
+        const appContainer = document.getElementById('appContainer'), modalContainer = document.getElementById('modalContainer');
+        const monthFilter = document.getElementById('month-filter'), yearFilter = document.getElementById('year-filter');
+
+        function getIcon(category) { return `<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-3xl glass-card">${(categories[category] || categories['Outros']).icon}</div>`; }
+        function renderQuickAddButtons() {
+            document.getElementById('quick-add-container').innerHTML = Object.keys(categories).filter(c => c !== 'Receita').map(cat => `<button data-action="${cat === 'Alimentação' ? 'show-supermarket-calculator' : 'show-expense-modal'}" data-category="${cat}" class="quick-add-card flex flex-col items-center justify-center p-4 rounded-2xl text-center"><span class="text-5xl mb-2">${categories[cat].icon}</span><span class="text-sm font-semibold text-white leading-tight">${cat}</span></button>`).join('');
+        }
+        function renderTransactionHistory(transactions) {
+            const history = document.getElementById('transactionHistory'); document.getElementById('no-transactions-msg').classList.toggle('hidden', transactions.length > 0);
+            history.innerHTML = transactions.map(t => `<div data-action="show-item-details" data-id="${t.id}" class="fade-in flex items-center glass-card p-3 rounded-lg cursor-pointer">${getIcon(t.category)}<div class="flex-grow ml-4"><p class="font-semibold text-white flex items-center">${t.description} ${t.items ? '<span class="ml-2 text-lg">🧾</span>' : ''}</p><p class="text-sm text-gray-400">${t.category}</p></div><div class="text-right"><p class="font-bold ${t.type === 'receita' ? 'text-green-400' : 'text-red-400'}">${t.type === 'receita' ? '+' : '-'} ${formatCurrency(t.amount)}</p><p class="text-sm text-gray-400">${t.date?.toDate().toLocaleDateString('pt-BR')}</p></div></div>`).join('');
+        }
+        function renderSummary(transactions) {
+            const income = transactions.filter(t => t.type === 'receita').reduce((s, t) => s + t.amount, 0);
+            const expense = transactions.filter(t => t.type === 'despesa').reduce((s, t) => s + t.amount, 0);
+            document.getElementById('summaryIncome').textContent = formatCurrency(income);
+            document.getElementById('summaryExpense').textContent = formatCurrency(expense);
+            document.getElementById('summaryBalance').textContent = formatCurrency(income - expense);
+        }
+        function renderModalShell(title, content, maxWidth = 'max-w-md') {
+            modalContainer.innerHTML = `<div class="fixed inset-0 z-50 bg-black/60 flex justify-center items-center p-4 fade-in"><div class="glass-card rounded-2xl w-full ${maxWidth}"><div class="flex justify-between items-center p-5 border-b border-white/10"><h3 class="text-xl font-bold text-white">${title}</h3><button data-action="close-modal" class="text-gray-400 hover:text-white text-3xl">&times;</button></div><div class="p-6 max-h-[70vh] overflow-y-auto modal-scrollbar">${content}</div></div></div>`;
+        }
+        function renderItemDetailsModal(transaction) {
+            let itemsHtml = '';
+            if (transaction.items && transaction.items.length > 0) {
+                itemsHtml = `<div class="mt-4 pt-4 border-t border-white/10"><h4 class="font-bold mb-2">Itens Comprados:</h4><div class="space-y-1 text-sm">${transaction.items.map(item => `<div class="flex justify-between"><span>${item.name} (${item.quantity} ${item.unit})</span><span>${formatCurrency(item.subtotal)}</span></div>`).join('')}</div></div>`;
+            }
+            const content = `<div class="space-y-2"><div class="flex justify-between"><span>Categoria:</span><span class="font-medium">${transaction.category}</span></div><div class="flex justify-between"><span>Data:</span><span class="font-medium">${transaction.date.toDate().toLocaleDateString('pt-BR')}</span></div><div class="flex justify-between items-center pt-2 border-t border-white/10 mt-2"><span class="text-xl font-bold">Valor:</span><span class="text-2xl font-bold ${transaction.type === 'receita' ? 'text-green-400' : 'text-red-400'}">${formatCurrency(transaction.amount)}</span></div>${itemsHtml}</div>`;
+            renderModalShell(transaction.description, content);
+        }
+        function renderSupermarketCalculator() {
+            let items = [];
+            const updateTotal = () => document.getElementById('supermarket-total').textContent = formatCurrency(items.reduce((t, i) => t + i.subtotal, 0));
+            const renderItems = () => { document.getElementById('supermarket-list').innerHTML = items.map((item, i) => `<div class="flex items-center justify-between p-2 rounded-lg bg-white/5"><span>${item.name} (${item.quantity} ${item.unit})</span><span>${formatCurrency(item.subtotal)}</span><button data-action="remove-supermarket-item" data-index="${i}" class="text-red-400 font-bold">&times;</button></div>`).join(''); updateTotal(); };
+            const updateForm = () => { const isUnit = document.getElementById('calc-type').value === 'unit'; document.getElementById('quantity-label').textContent = isUnit ? 'Quantidade' : 'Peso (Kg)'; document.getElementById('price-label').textContent = isUnit ? 'Preço por Unidade' : 'Preço por Kg'; };
+            const content = `<div class="mb-4 p-4 rounded-lg bg-cyan-600/50 text-center"><p class="text-lg">Total Previsto</p><h2 id="supermarket-total" class="text-4xl font-bold">${formatCurrency(0)}</h2></div><form id="supermarket-form" class="space-y-4"><div><label class="text-sm">Tipo de Cálculo</label><select id="calc-type" class="w-full mt-1 p-2 rounded-lg"><option value="unit">Por Unidade</option><option value="weight">Por Peso</option></select></div><input id="item-name" placeholder="Nome do Produto" class="w-full p-2 rounded-lg"><div class="grid grid-cols-2 gap-4"><div><label id="quantity-label" class="text-sm">Quantidade</label><input id="item-quantity" type="number" value="1" step="0.001" class="w-full mt-1 p-2 rounded-lg"></div><div><label id="price-label" class="text-sm">Preço por Unidade</label><input id="item-price" type="number" step="0.01" placeholder="R$ 0,00" class="w-full mt-1 p-2 rounded-lg"></div></div><button type="submit" class="w-full py-2 rounded-lg bg-cyan-600 text-white font-bold btn-glow">Adicionar Produto</button></form><div id="supermarket-list" class="mt-4 space-y-2"></div><div class="flex justify-end pt-4 mt-4 border-t border-white/10"><button id="add-supermarket-total-to-expenses" class="py-2 px-4 rounded-lg bg-green-500 text-white font-bold btn-glow">Adicionar Total às Despesas</button></div>`;
+            renderModalShell("Calculadora de Compras", content, 'max-w-lg');
+            document.getElementById('calc-type').addEventListener('change', updateForm);
+            document.getElementById('supermarket-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('item-name').value, quantity = parseFloat(document.getElementById('item-quantity').value), price = parseFloat(document.getElementById('item-price').value), isUnit = document.getElementById('calc-type').value === 'unit';
+                if (!name || !quantity || !price) { alert("Preencha todos os campos do produto."); return; }
+                items.push({ name, quantity, price, unit: isUnit ? 'un' : 'Kg', subtotal: quantity * price });
+                e.target.reset(); document.getElementById('item-name').focus(); updateForm(); renderItems();
+            });
+            document.getElementById('modalContainer').addEventListener('click', (e) => {
+                if (e.target.dataset.action === 'remove-supermarket-item') { items.splice(parseInt(e.target.dataset.index), 1); renderItems(); }
+                else if (e.target.id === 'add-supermarket-total-to-expenses') {
+                    const total = items.reduce((t, i) => t + i.subtotal, 0);
+                    if (total > 0) { addTransaction(currentAppId, currentUserId, { description: 'Compras de Supermercado', category: 'Alimentação', amount: total, date: new Date(), type: 'despesa', items: items }); modalContainer.innerHTML = ''; } 
+                    else { alert("A lista está vazia."); }
+                }
+            });
+        }
+        function renderTransactionFormModal(type, transaction, category) {
+            const isEdit = !!transaction, isIncome = type === 'receita', dateValue = (transaction?.date?.toDate() || new Date()).toISOString().substring(0, 10);
+            let categoryOptions;
+            if (isIncome) {
+                const incomeCats = ['Salário', 'Renda Extra'];
+                categoryOptions = incomeCats.map(c => `<option value="${c}" ${transaction?.category === c ? 'selected' : ''}>${c}</option>`).join('');
+            } else {
+                const expenseCats = Object.keys(categories).filter(c => c !== 'Receita');
+                categoryOptions = expenseCats.map(c => `<option value="${c}" ${(transaction?.category || category) === c ? 'selected' : ''}>${c}</option>`).join('');
+            }
+            // CORREÇÃO: Usar new Date() para criar um objeto Date a partir do valor do input, que está no formato 'YYYY-MM-DD'.
+            const content = `<form id="transaction-form" class="space-y-4" data-type="${type}" ${isEdit ? `data-edit-id="${transaction.id}"` : ''}><input name="description" value="${transaction?.description || ''}" required placeholder="Descrição" class="w-full p-2 rounded-lg"><select name="category" required class="w-full p-2 rounded-lg">${categoryOptions}</select><input name="amount" value="${transaction?.amount || ''}" type="number" step="0.01" min="0.01" required placeholder="Valor" class="w-full p-2 rounded-lg"><input name="date" value="${dateValue}" type="date" required class="w-full p-2 rounded-lg"><div class="flex justify-end pt-4"><button type="submit" class="py-2 px-4 rounded-lg bg-cyan-600 text-white font-bold btn-glow">${isEdit ? 'Salvar' : 'Adicionar'}</button></div></form>`;
+            renderModalShell(`${isEdit ? 'Editar' : 'Adicionar'} ${isIncome ? 'Receita' : 'Despesa'}`, content);
+        }
+        function attachAppEventListeners(onFilterChange) {
+            appContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]'); if (!target) return;
+                const { action, category, id } = target.dataset;
+                switch (action) {
+                    case 'logout': signOut(auth); break;
+                    case 'show-income-modal': renderTransactionFormModal('receita'); break;
+                    case 'show-expense-modal': renderTransactionFormModal('despesa', null, category); break;
+                    case 'show-supermarket-calculator': renderSupermarketCalculator(); break;
+                    case 'show-item-details': renderItemDetailsModal(allTransactions.find(t => t.id === id)); break;
+                }
+            });
+            modalContainer.addEventListener('click', (e) => { const target = e.target.closest('[data-action]'); if (!target) return; if (target.dataset.action === 'close-modal') modalContainer.innerHTML = ''; });
+            modalContainer.addEventListener('submit', (e) => {
+                e.preventDefault(); if (e.target.id !== 'transaction-form') return;
+                const form = e.target, isEdit = !!form.dataset.editId;
+                // CORREÇÃO: Construir a data em UTC para evitar problemas de fuso horário que faziam as transações "desaparecer".
+                const dateParts = form.date.value.split('-');
+                const correctedDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+                const data = { description: form.description.value, category: form.category.value, amount: parseFloat(form.amount.value), date: correctedDate, type: form.dataset.type };
+                if (isEdit) updateTransaction(currentAppId, currentUserId, form.dataset.editId, data); else addTransaction(currentAppId, currentUserId, data);
+                modalContainer.innerHTML = '';
+            });
+            monthFilter.addEventListener('change', onFilterChange); yearFilter.addEventListener('change', onFilterChange);
+        }
+        function initializeMainUI(appId, user, onFilterChange) {
+            currentAppId = appId; currentUserId = user.uid;
+            document.getElementById('userEmail').textContent = user.email;
+            const now = new Date(), months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            monthFilter.innerHTML = months.map((n, i) => `<option value="${i}" ${i === now.getMonth() ? 'selected' : ''}>${n}</option>`).join('');
+            yearFilter.innerHTML = Array.from({length: 6}, (_, i) => now.getFullYear() - i + 1).map(y => `<option value="${y}" ${y === now.getFullYear() ? 'selected' : ''}>${y}</option>`).join('');
+            renderQuickAddButtons();
+            if (!appContainer.dataset.listenersAttached) { attachAppEventListeners(onFilterChange); appContainer.dataset.listenersAttached = 'true'; }
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden'); 
+        }
+        function updateDashboard(transactions) {
+            allTransactions = transactions.sort((a,b) => b.date.toDate() - a.date.toDate());
+            renderSummary(allTransactions); renderTransactionHistory(allTransactions);
+        }
+        function hideMainUI() { appContainer.classList.add('hidden'); authContainer.classList.remove('hidden'); }
+
+        // MÓDULO: MAIN - LÓGICA DE INICIALIZAÇÃO CORRIGIDA E SIMPLIFICADA
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pof-app';
+        let unsubscribeTransactions = null;
+        const initialLoader = document.getElementById('initialLoader');
+
+        function fetchAndRenderTransactions(userId) {
+            if (unsubscribeTransactions) {
+                unsubscribeTransactions();
+            }
+            const year = document.getElementById('year-filter').value;
+            const month = document.getElementById('month-filter').value;
+            unsubscribeTransactions = onTransactionsUpdate(appId, userId, year, month, (transactions, err) => {
+                if (err) {
+                    console.error("Erro ao carregar transações:", err);
+                    document.getElementById('transactionHistory').innerHTML = `<p class="text-red-400 text-center">Não foi possível carregar o histórico.</p>`;
+                } else {
+                    updateDashboard(transactions);
+                }
+            });
+        }
+        
+        async function main() {
+            // CORREÇÃO: Usar onAuthStateChanged como a única fonte da verdade.
+            onAuthStateChanged(auth, async (user) => {
+                // Tenta fazer login com o token do ambiente, se existir e ainda não houver utilizador.
+                if (!user && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        // A função será re-chamada pelo onAuthStateChanged com o novo utilizador, então paramos aqui.
+                        return;
+                    } catch (err) {
+                        console.error("Falha na autenticação inicial com token:", err);
+                        // Se o token falhar, a função continua e mostra o ecrã de login.
+                    }
+                }
+                
+                initialLoader.classList.add('hidden');
+
+                const finalUser = auth.currentUser; // Verifica novamente o utilizador após a tentativa de login com token.
+
+                if (finalUser && !finalUser.isAnonymous) {
+                    // Se existe um utilizador, inicializa a aplicação principal.
+                    initializeMainUI(appId, finalUser, () => fetchAndRenderTransactions(finalUser.uid));
+                    fetchAndRenderTransactions(finalUser.uid);
+                } else {
+                    // Se NÃO existe utilizador, desliga o listener de transações e mostra o login.
+                    if (unsubscribeTransactions) {
+                        unsubscribeTransactions();
+                        unsubscribeTransactions = null;
+                    }
+                    hideMainUI(); 
+                    renderAuthScreen('login');
+                }
+            });
+        }
+        
+        main();
+    </script>
+</body>
+</html>
+
+
