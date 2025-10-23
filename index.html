@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meu Orçamento PRO</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<!-- Biblioteca jsPDF REMOVIDA -->
+<!-- Adicionada biblioteca Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -28,28 +31,57 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
 </head>
 <body>
 
+<!-- Loader Inicial -->
 <div id="initialLoader" class="fixed inset-0 bg-[#111827] flex flex-col items-center justify-center z-50">
   <svg class="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
 </div>
 
+<!-- Conteúdo da Aplicação -->
 <div id="authContainer"></div>
 <div id="appContainer" class="hidden">
   <header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg p-4 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span><h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1></div><div class="flex items-center"><span id="userEmail" class="text-gray-400 text-sm hidden sm:block mr-4"></span><button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button></div></header>
   <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-    <div class="mb-8 space-y-6"><div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl"><label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label><select id="month-filter" class="p-2 border-none rounded-lg"></select><select id="year-filter" class="p-2 border-none rounded-lg"></select></div><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-green-500/20 p-3 rounded-full"><span class="text-3xl">💰</span></div><div><p class="text-sm text-gray-400">Receita do Mês</p><p id="summaryIncome" class="text-2xl font-bold text-green-400">R$ 0,00</p></div></div><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-red-500/20 p-3 rounded-full"><span class="text-3xl">💸</span></div><div><p class="text-sm text-gray-400">Despesa do Mês</p><p id="summaryExpense" class="text-2xl font-bold text-red-400">R$ 0,00</p></div></div><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-cyan-500/20 p-3 rounded-full"><span class="text-3xl">🏦</span></div><div><p class="text-sm text-gray-400">Saldo do Mês</p><p id="summaryBalance" class="text-2xl font-bold text-cyan-400">R$ 0,00</p></div></div></div></div>
+    <!-- Filtros e Resumo -->
+    <div class="mb-8 space-y-6">
+      <!-- Botão PDF REMOVIDO daqui -->
+      <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl">
+        <label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label>
+        <select id="month-filter" class="p-2 border-none rounded-lg"></select>
+        <select id="year-filter" class="p-2 border-none rounded-lg"></select>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-green-500/20 p-3 rounded-full"><span class="text-3xl">💰</span></div><div><p class="text-sm text-gray-400">Receita do Mês</p><p id="summaryIncome" class="text-2xl font-bold text-green-400">R$ 0,00</p></div></div><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-red-500/20 p-3 rounded-full"><span class="text-3xl">💸</span></div><div><p class="text-sm text-gray-400">Despesa do Mês</p><p id="summaryExpense" class="text-2xl font-bold text-red-400">R$ 0,00</p></div></div><div class="glass-card p-5 rounded-2xl flex items-center space-x-4"><div class="bg-cyan-500/20 p-3 rounded-full"><span class="text-3xl">🏦</span></div><div><p class="text-sm text-gray-400">Saldo do Mês</p><p id="summaryBalance" class="text-2xl font-bold text-cyan-400">R$ 0,00</p></div></div></div>
+    </div>
+    
+    <!-- Container do Gráfico -->
+    <div class="mb-8 glass-card p-4 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">Análise do Mês</h3>
+        </div>
+        <div class="h-64 sm:h-80">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Botões de Ação Principal -->
     <div class="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4"><button data-action="show-income-modal" class="w-full flex items-center justify-center space-x-3 bg-green-500 text-white font-bold py-3 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">➕</span><span>Adicionar Receita</span></button><button data-action="add-salary" class="w-full flex items-center justify-center space-x-3 bg-green-700 text-white font-bold py-3 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">💼</span><span>Adicionar Salário</span></button></div>
+    <!-- Adição Rápida de Despesa -->
     <div class="mb-8"><h3 class="text-xl font-bold text-white mb-4">Adicionar Despesa Rápida</h3><div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div></div>
+    <!-- Histórico de Transações -->
     <div><h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2><div id="transactionHistory" class="space-y-3"><p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p></div></div>
   </main>
 </div>
+<!-- Container para "Páginas" de Modais (Supermercado, Transação) -->
+<div id="modalPageContainer" class="hidden"></div>
+<!-- Container para Modais de Confirmação (que não têm inputs) -->
 <div id="modalContainer"></div>
 
 <script type="module">
 // --- CÓDIGO DA APLICAÇÃO ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCxNNygCvK2xQeIymAZoo95ydb2l9l7O6E",
   authDomain: "financeiro-ab215.firebaseapp.com",
@@ -68,6 +100,10 @@ try {
 } catch (e) { console.error("Firebase initialization failed:", e); }
 
 let monthFilter, yearFilter, transactionHistory, summaryIncome, summaryExpense, summaryBalance, quickAddContainer, noTransactionsMsg;
+const modalContainer = document.getElementById('modalContainer');
+const modalPageContainer = document.getElementById('modalPageContainer'); 
+// Variável currentMonthTransactions REMOVIDA
+let financeChartInstance = null;
 
 function initializeAppDOMElements() {
     monthFilter = document.getElementById('month-filter');
@@ -81,27 +117,123 @@ function initializeAppDOMElements() {
 }
 
 // --- Funções de UI e Autenticação ---
-// Novos ícones de olho SVG do Heroicons
 const eyeIconSvg = `<svg data-icon="eye" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>`;
 const eyeOffIconSvg = `<svg data-icon="eye-off" class="h-5 w-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19.5c-4.638 0-8.573-3.007-9.963-7.178a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c1.192 0 2.337.163 3.425.445M15 12a3 3 0 11-6 0 3 3 0 016 0zm-4.75 4.75L4.5 19.5m15-6l-2.25 2.25M4.5 4.5l15 15"></path></svg>`;
 
+function showApp(user){ 
+    document.getElementById('initialLoader').classList.add('hidden'); 
+    document.getElementById('authContainer').innerHTML=''; 
+    document.getElementById('authContainer').classList.add('hidden'); 
+    document.getElementById('modalPageContainer').innerHTML = '';
+    document.getElementById('modalPageContainer').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden'); 
+    document.getElementById('userEmail').textContent = user.email; 
+}
+function showAuth(){ 
+    document.getElementById('initialLoader').classList.add('hidden'); 
+    document.getElementById('appContainer').classList.add('hidden'); 
+    document.getElementById('modalPageContainer').innerHTML = '';
+    document.getElementById('modalPageContainer').classList.add('hidden');
+    document.getElementById('authContainer').classList.remove('hidden'); 
+    
+    // Espaçamento corrigido
+    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in">
+        <div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Orçamento Familiar</h1><p class="text-cyan-400">Controle as suas finanças com facilidade</p></div>
+        <input type="email" id="loginEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg">
+        <div class="relative"> 
+            <input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 rounded-lg pr-10">
+            <button type="button" data-action="toggle-password" data-target="loginPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button>
+        </div>
+        <p class="text-sm text-right text-gray-400 hover:text-cyan-400 cursor-pointer mt-4 mb-4" id="showForgotPassword">Esqueceu a senha?</p>
+        <p id="loginError" class="text-red-400 text-center text-sm mb-4 h-5"></p>
+        <button id="loginBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Entrar</button>
+        <p class="text-sm mt-3 text-center text-gray-400">Não tem uma conta? <span id="showSignup" class="text-cyan-400 cursor-pointer font-semibold">Registe-se</span></p>
+    </div>`; 
+    
+    document.getElementById('loginBtn').addEventListener('click', handleLogin); 
+    document.getElementById('showSignup').addEventListener('click', showSignup); 
+    document.getElementById('showForgotPassword').addEventListener('click', showForgotPassword);
+}
+function showSignup(){ 
+    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registar</h1></div><input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Registar</button><p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o login</p></div>`; 
+    document.getElementById('signupBtn').addEventListener('click', handleSignup); 
+    document.getElementById('backLogin').addEventListener('click', showAuth); 
+}
 
-function showApp(user){ document.getElementById('initialLoader').classList.add('hidden'); document.getElementById('authContainer').innerHTML=''; document.getElementById('authContainer').classList.add('hidden'); document.getElementById('appContainer').classList.remove('hidden'); document.getElementById('userEmail').textContent = user.email; }
-function showAuth(){ document.getElementById('initialLoader').classList.add('hidden'); document.getElementById('appContainer').classList.add('hidden'); document.getElementById('authContainer').classList.remove('hidden'); document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Orçamento Familiar</h1><p class="text-cyan-400">Controle as suas finanças com facilidade</p></div><input type="email" id="loginEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="loginPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="loginError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="loginBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Entrar</button><p class="text-sm mt-3 text-center text-gray-400">Não tem uma conta? <span id="showSignup" class="text-cyan-400 cursor-pointer font-semibold">Registe-se</span></p></div>`; document.getElementById('loginBtn').addEventListener('click', handleLogin); document.getElementById('showSignup').addEventListener('click', showSignup); }
-function showSignup(){ document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registar</h1></div><input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Registar</button><p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o login</p></div>`; document.getElementById('signupBtn').addEventListener('click', handleSignup); document.getElementById('backLogin').addEventListener('click', showAuth); }
+function showForgotPassword() {
+    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in">
+        <div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Recuperar Senha</h1></div>
+        <p class="text-gray-300 text-sm text-center mb-4">Insira seu e-mail para enviarmos um link de redefinição.</p>
+        <input type="email" id="resetEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg">
+        <p id="resetMessage" class="text-center text-sm mb-3 h-5"></p>
+        <button id="resetBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Enviar Link</button>
+        <p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o login</p>
+    </div>`;
+    document.getElementById('resetBtn').addEventListener('click', handleForgotPassword);
+    document.getElementById('backLogin').addEventListener('click', showAuth);
+}
+
 async function handleLogin(){ const email = document.getElementById('loginEmail').value; const pass = document.getElementById('loginPass').value; const loginBtn = document.getElementById('loginBtn'); const errorElement = document.getElementById('loginError'); errorElement.textContent = ''; loginBtn.disabled = true; loginBtn.textContent = 'Entrando...'; try { await signInWithEmailAndPassword(auth, email, pass); } catch(e) { errorElement.textContent = 'Credenciais inválidas.'; } finally { loginBtn.disabled = false; loginBtn.textContent = 'Entrar'; } }
-async function handleSignup() { /* Lógica de registo */ }
+async function handleSignup() { 
+    const email = document.getElementById('signupEmail').value;
+    const pass = document.getElementById('signupPass').value;
+    const signupBtn = document.getElementById('signupBtn');
+    const errorElement = document.getElementById('signupError');
+    errorElement.textContent = '';
+    signupBtn.disabled = true;
+    signupBtn.textContent = 'Registando...';
+    if (pass.length < 6) {
+        errorElement.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Registar';
+        return;
+    }
+    try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+    } catch(e) {
+        if (e.code === 'auth/email-already-in-use') { errorElement.textContent = 'Este email já está em uso.'; }
+        else if (e.code === 'auth/invalid-email') { errorElement.textContent = 'Email inválido.'; }
+        else if (e.code === 'auth/weak-password') { errorElement.textContent = 'A senha é muito fraca.'; }
+        else { errorElement.textContent = 'Erro ao registar. Tente novamente.'; }
+    } finally {
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Registar';
+    }
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('resetEmail').value;
+    const resetBtn = document.getElementById('resetBtn');
+    const messageElement = document.getElementById('resetMessage');
+    
+    messageElement.textContent = '';
+    resetBtn.disabled = true;
+    resetBtn.textContent = 'Enviando...';
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        messageElement.textContent = 'Email enviado! Verifique sua caixa de entrada.';
+        messageElement.className = 'text-green-400 text-center text-sm mb-3 h-5';
+    } catch(e) {
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-email') {
+            messageElement.textContent = 'Email não encontrado ou inválido.';
+        } else {
+            messageElement.textContent = 'Erro ao enviar. Tente novamente.';
+        }
+        messageElement.className = 'text-red-400 text-center text-sm mb-3 h-5';
+    } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = 'Enviar Link';
+    }
+}
+
 
 // --- MODAIS E AÇÕES GLOBAIS ---
-const modalContainer = document.getElementById('modalContainer');
 document.addEventListener('click', (e) => {
     const target = e.target.closest('button');
     if (!target) return;
-
     const { action, docId, items, target: targetId } = target.dataset;
-
     if (action === 'logout') signOut(auth);
-    
     if (action === 'toggle-password') {
         const passwordInput = document.getElementById(targetId);
         const eyeIcon = target.querySelector('[data-icon="eye"]');
@@ -123,61 +255,235 @@ function showConfirmationModal(title, message, onConfirm) {
     document.getElementById('confirmCancel').addEventListener('click', () => modalContainer.innerHTML = '');
     document.getElementById('confirmAction').addEventListener('click', () => { onConfirm(); modalContainer.innerHTML = ''; });
 }
-function showTransactionModal(type, descInitial = ''){ modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class="bg-gray-800 rounded-2xl p-6 w-full max-w-sm relative fade-in glass-card"><h2 class="text-xl font-bold mb-4 text-white">${type==='receita'?'Adicionar Receita':'Adicionar Despesa'}</h2><input id="transDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-lg mb-3" value="${descInitial}"/><input id="transAmount" type="number" placeholder="Valor (R$)" class="w-full p-3 rounded-lg mb-3"/><div class="flex justify-end space-x-2"><button id="cancelBtn" class="bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg font-bold text-white transition-colors">Cancelar</button><button id="saveBtn" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar</button></div></div></div>`; document.getElementById('cancelBtn').addEventListener('click', ()=> modalContainer.innerHTML=''); document.getElementById('saveBtn').addEventListener('click', async () => { const saveBtn = document.getElementById('saveBtn'); saveBtn.disabled = true; try { const userId = auth.currentUser.uid; const desc = document.getElementById('transDesc').value.trim(); const amount = parseFloat(document.getElementById('transAmount').value); if(!desc || isNaN(amount) || amount <= 0) return; await addDoc(collection(db, 'users', userId, 'transactions'), { desc, amount, type, timestamp: serverTimestamp() }); modalContainer.innerHTML=''; } catch (err) { console.error(err); saveBtn.disabled = false; } }); }
+
+// --- Funções para "Páginas" de Modal ---
+
+function closeTransactionPage() {
+    modalPageContainer.innerHTML = '';
+    modalPageContainer.classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+}
+
+function showTransactionModal(type, descInitial = ''){ 
+    document.getElementById('appContainer').classList.add('hidden');
+    
+    modalPageContainer.innerHTML = `<div class="p-8 max-w-md mx-auto my-12 sm:my-20 glass-card rounded-xl fade-in">
+        <h2 class="text-xl font-bold mb-4 text-white">${type==='receita'?'Adicionar Receita':'Adicionar Despesa'}</h2>
+        <input id="transDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-lg mb-3" value="${descInitial}"/>
+        <input id="transAmount" type="number" placeholder="Valor (R$)" class="w-full p-3 rounded-lg mb-3"/>
+        <div class="flex justify-end space-x-2">
+            <button id="cancelBtn" class="bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg font-bold text-white transition-colors">Cancelar</button>
+            <button id="saveBtn" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar</button>
+        </div>
+    </div>`; 
+    
+    modalPageContainer.classList.remove('hidden');
+    window.scrollTo(0, 0);
+    
+    document.getElementById('cancelBtn').addEventListener('click', closeTransactionPage); 
+    document.getElementById('saveBtn').addEventListener('click', async () => { 
+        const saveBtn = document.getElementById('saveBtn'); 
+        saveBtn.disabled = true; 
+        try { 
+            const userId = auth.currentUser.uid; 
+            const desc = document.getElementById('transDesc').value.trim(); 
+            const amount = parseFloat(document.getElementById('transAmount').value); 
+            if(!desc || isNaN(amount) || amount <= 0) { 
+                saveBtn.disabled = false; 
+                return; 
+            } 
+            await addDoc(collection(db, 'users', userId, 'transactions'), { desc, amount, type, timestamp: serverTimestamp() }); 
+            closeTransactionPage();
+        } catch (err) { 
+            console.error(err); 
+            saveBtn.disabled = false; 
+        } 
+    }); 
+}
 
 // --- GESTÃO DE DADOS ---
 let unsubscribeFromTransactions;
 
 async function handleDeleteTransaction(docId) {
     showConfirmationModal('Excluir Transação', 'Tem a certeza de que deseja excluir esta transação? Esta ação não pode ser desfeita.', async () => {
-        const userId = auth.currentUser.uid;
-        await deleteDoc(doc(db, 'users', userId, 'transactions', docId));
+        try {
+            const userId = auth.currentUser.uid;
+            await deleteDoc(doc(db, 'users', userId, 'transactions', docId));
+        } catch (err) {
+            console.error("Erro ao excluir transação:", err);
+        }
     });
 }
 
+function updateFinanceChart(income, expense) {
+    const ctx = document.getElementById('financeChart').getContext('2d');
+    
+    if (financeChartInstance) {
+        financeChartInstance.destroy();
+    }
+
+    if (income === 0 && expense === 0) {
+        // Opcional: mostrar uma mensagem "Sem dados" no canvas
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#9ca3af'; // Cor de texto cinza
+        ctx.font = "16px 'Poppins'";
+        ctx.fillText('Sem dados para este mês', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        ctx.restore();
+        financeChartInstance = null;
+        return;
+    }
+
+    financeChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Receitas', 'Despesas'],
+            datasets: [{
+                label: 'Movimentações',
+                data: [income, expense],
+                backgroundColor: [
+                    'rgba(52, 211, 153, 0.7)',
+                    'rgba(248, 113, 113, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 1,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e5e7eb',
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            family: "'Poppins', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
 function listenForTransactions() {
+    if (unsubscribeFromTransactions) unsubscribeFromTransactions();
     if (!auth.currentUser) return;
     const userId = auth.currentUser.uid;
     const q = query(collection(db, 'users', userId, 'transactions'), orderBy('timestamp', 'desc'));
+    
     unsubscribeFromTransactions = onSnapshot(q, (snapshot) => {
         let income = 0, expense = 0, transactionCount = 0;
         transactionHistory.innerHTML = '';
+        // Linhas do currentMonthTransactions REMOVIDAS
+        
         const currentMonth = parseInt(monthFilter.value);
         const currentYear = parseInt(yearFilter.value);
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const docId = doc.id;
+        
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const docId = docSnap.id;
             if (!data.timestamp) return;
             const date = data.timestamp.toDate();
+            
             if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 transactionCount++;
+                // Linha do currentMonthTransactions.push() REMOVIDA
+                
                 const div = document.createElement('div');
                 div.className = 'glass-card p-3 rounded-lg flex justify-between items-center fade-in';
                 const formattedAmount = data.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                
                 let actionButtons = `<button class="icon-btn" data-doc-id="${docId}" data-action="delete"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
-                if (data.items) { actionButtons = `<button class="icon-btn view mr-2" data-items='${JSON.stringify(data.items)}' data-action="view-items"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>` + actionButtons; }
+                
+                if (data.items) { 
+                    actionButtons = `<button class="icon-btn view mr-2" data-items='${JSON.stringify(data.items)}' data-action="view-items"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>` + actionButtons; 
+                }
+                
                 div.innerHTML = `<div><p class="font-semibold">${data.desc}</p><p class="text-xs text-gray-400">${date.toLocaleDateString('pt-BR')}</p></div><div class="flex items-center"><span class="${data.type === 'receita' ? 'text-green-400' : 'text-red-400'} font-bold mr-4">${formattedAmount}</span><div>${actionButtons}</div></div>`;
                 transactionHistory.appendChild(div);
-                if (data.type === 'receita') income += data.amount; else expense += data.amount;
+                
+                if (data.type === 'receita') income += data.amount; 
+                else expense += data.amount;
             }
         });
+        
         noTransactionsMsg.classList.toggle('hidden', transactionCount > 0);
         summaryIncome.textContent = income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         summaryExpense.textContent = expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const balance = income - expense;
         summaryBalance.textContent = balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         summaryBalance.className = `text-2xl font-bold ${balance >= 0 ? 'text-cyan-400' : 'text-orange-400'}`;
+        
+        updateFinanceChart(income, expense);
+
+    }, (error) => {
+        console.error("Erro ao ouvir transações:", error);
     });
 }
 
 function setupApp() {
     initializeAppDOMElements();
+    
     document.querySelector('[data-action="show-income-modal"]').addEventListener('click', ()=> showTransactionModal('receita'));
     document.querySelector('[data-action="add-salary"]').addEventListener('click', ()=> showTransactionModal('receita', 'Salário'));
+    // Listener do PDF REMOVIDO
 
-    const quickAddItems = [ { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'supermarket' }, { name: 'Aluguel', icon: '🏠', type: 'despesa' }, { name: 'Transporte', icon: '🚌', type: 'despesa' }, { name: 'Farmácia', icon: '💊', type: 'despesa' }, { name: 'Lazer', icon: '🎉', type: 'despesa' }, { name: 'Saúde', icon: '❤️', type: 'despesa' }, { name: 'Educação', icon: '🎓', type: 'despesa' }, { name: 'Comida', icon: '🍕', type: 'despesa' }, { name: 'Outro', icon: '⚙️', type: 'despesa' } ];
+    const quickAddItems = [ 
+        { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-supermarket' }, 
+        { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Transporte', icon: '🚌', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense' }, 
+        { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense' } 
+    ];
+    
     quickAddContainer.innerHTML = '';
-    quickAddItems.forEach(item => { const btn = document.createElement('button'); btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-3 flex flex-col items-center justify-center btn-glow'; btn.innerHTML = `<span class="text-2xl">${item.icon}</span><span class="text-xs mt-1">${item.name}</span>`; if (item.action === 'supermarket') { btn.addEventListener('click', showSupermarketModal); } else { btn.addEventListener('click', () => showTransactionModal(item.type, item.name)); } quickAddContainer.appendChild(btn); });
+    quickAddItems.forEach(item => { 
+        const btn = document.createElement('button'); 
+        btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-3 flex flex-col items-center justify-center btn-glow'; 
+        btn.innerHTML = `<span class="text-2xl pointer-events-none">${item.icon}</span><span class="text-xs mt-1 pointer-events-none">${item.name}</span>`; 
+        btn.dataset.action = item.action;
+        btn.dataset.type = item.type;
+        btn.dataset.name = item.name;
+        quickAddContainer.appendChild(btn); 
+    });
+
+    quickAddContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('button');
+        if (!target) return;
+        const { action, type, name } = target.dataset;
+        if (action === 'quick-supermarket') { showSupermarketModal(); } 
+        else if (action === 'quick-expense') { showTransactionModal(type, name); }
+    });
     
     transactionHistory.addEventListener('click', (e) => {
         const target = e.target.closest('button');
@@ -191,19 +497,120 @@ function setupApp() {
     listenForTransactions();
 }
 
-function populateFilters() { const now = new Date(); for (let i = 0; i < 12; i++) { const monthName = new Date(now.getFullYear(), i, 1).toLocaleString('pt-BR', { month: 'long' }); const opt = document.createElement('option'); opt.value = i; opt.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1); if (i === now.getMonth()) opt.selected = true; monthFilter.appendChild(opt); } for (let y = now.getFullYear(); y >= now.getFullYear() - 5; y--) { const opt = document.createElement('option'); opt.value = y; opt.textContent = y; if (y === now.getFullYear()) opt.selected = true; yearFilter.appendChild(opt); } monthFilter.addEventListener('change', listenForTransactions); yearFilter.addEventListener('change', listenForTransactions); }
+function populateFilters() { 
+    const now = new Date(); 
+    monthFilter.innerHTML = '';
+    yearFilter.innerHTML = '';
+    for (let i = 0; i < 12; i++) { const monthName = new Date(now.getFullYear(), i, 1).toLocaleString('pt-BR', { month: 'long' }); const opt = document.createElement('option'); opt.value = i; opt.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1); if (i === now.getMonth()) opt.selected = true; monthFilter.appendChild(opt); } 
+    for (let y = now.getFullYear(); y >= now.getFullYear() - 5; y--) { const opt = document.createElement('option'); opt.value = y; opt.textContent = y; if (y === now.getFullYear()) opt.selected = true; yearFilter.appendChild(opt); } 
+    monthFilter.removeEventListener('change', listenForTransactions);
+    yearFilter.removeEventListener('change', listenForTransactions);
+    monthFilter.addEventListener('change', listenForTransactions); 
+    yearFilter.addEventListener('change', listenForTransactions); 
+}
 
 // --- LÓGICA DO SUPERMERCADO ---
+
+function closeSupermarketPage() {
+    modalPageContainer.innerHTML = '';
+    modalPageContainer.classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+}
+
 function showSupermarketModal() {
     let shoppingCart = [];
-    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class="bg-gray-800 rounded-2xl w-full max-w-lg h-[90vh] flex flex-col glass-card"><h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">🛒 Calculadora de Supermercado</h2><div class="p-4 space-y-3"><input id="item-name" type="text" placeholder="Nome do item" class="w-full p-2 rounded-lg"><div class="grid grid-cols-5 gap-3"><select id="item-type" class="p-2 rounded-lg col-span-2"><option value="unit">Unidade</option><option value="weight">Peso (kg)</option></select><input id="item-quantity" type="number" placeholder="Qtde" class="w-full p-2 rounded-lg col-span-1"><input id="item-price" type="number" placeholder="Preço (un.)" class="w-full p-2 rounded-lg col-span-2"></div><button id="add-item-btn" class="w-full bg-cyan-600 text-white font-bold py-2 rounded-lg btn-glow">Adicionar Item</button></div><div id="shopping-list" class="flex-grow overflow-y-auto p-4 space-y-2 border-t border-b border-gray-700"><p class="text-gray-500 text-center">Nenhum item adicionado.</p></div><div class="p-4 space-y-3"><div class="flex justify-between items-center text-lg font-bold"><span class="text-gray-300">Total da Compra:</span><span id="running-total" class="text-cyan-400">R$ 0,00</span></div><div class="flex justify-end space-x-2"><button id="cancel-supermarket" class="bg-gray-600 py-2 px-4 rounded-lg font-bold text-white">Cancelar</button><button id="save-supermarket" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar Compra</button></div></div></div></div>`;
+    document.getElementById('appContainer').classList.add('hidden');
+    
+    modalPageContainer.innerHTML = `<div class="bg-gray-800 rounded-2xl w-full max-w-lg glass-card mx-auto my-8 fade-in">
+        
+        <h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">🛒 Calculadora de Supermercado</h2>
+        
+        <div>
+            <div class="p-4">
+                <div class="space-y-3">
+                    <div>
+                        <label for="item-name" class="text-sm font-medium text-gray-300">Nome do Item</label>
+                        <input id="item-name" type="text" placeholder="Ex: Arroz" class="w-full p-2 rounded-lg mt-1">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="item-type" class="text-sm font-medium text-gray-300">Tipo</label>
+                            <select id="item-type" class="w-full p-2 rounded-lg mt-1">
+                                <option value="unit">Unidade</option>
+                                <option value="weight">Peso (kg)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="item-quantity" class="text-sm font-medium text-gray-300">Quantidade</label>
+                            <input id="item-quantity" type="number" placeholder="1" class="w-full p-2 rounded-lg mt-1" step="any">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="item-price" class="text-sm font-medium text-gray-300">Preço <span id="price-label-suffix">(por Unidade)</span></label>
+                        <input id="item-price" type="number" placeholder="1.99" class="w-full p-2 rounded-lg mt-1" step="any">
+                    </div>
+                </div>
+                <button id="add-item-btn" class="w-full bg-cyan-600 text-white font-bold py-2 rounded-lg btn-glow mt-4">Adicionar Item</button>
+            </div>
+            
+            <div id="shopping-list" class="p-4 space-y-2 border-t border-b border-gray-700 max-h-60 overflow-y-auto">
+                <p class="text-gray-500 text-center">Nenhum item adicionado.</p>
+            </div>
+        </div>
+
+        <div class="p-4 space-y-3 border-t border-gray-700">
+            <div class="flex justify-between items-center text-lg font-bold">
+                <span class="text-gray-300">Total da Compra:</span>
+                <span id="running-total" class="text-cyan-400">R$ 0,00</span>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="cancel-supermarket" class="bg-gray-600 py-2 px-4 rounded-lg font-bold text-white">Cancelar</button>
+                <button id="save-supermarket" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar Compra</button>
+            </div>
+        </div>
+    </div>`;
+    
+    modalPageContainer.classList.remove('hidden');
+    window.scrollTo(0, 0);
+    
     const nameInput=document.getElementById('item-name'),typeSelect=document.getElementById('item-type'),quantityInput=document.getElementById('item-quantity'),priceInput=document.getElementById('item-price');
-    typeSelect.addEventListener('change',()=>{if(typeSelect.value==='unit'){quantityInput.placeholder='Qtde';priceInput.placeholder='Preço (un.)';}else{quantityInput.placeholder='Peso (ex: 0.5)';priceInput.placeholder='Preço por kg';}});
+    const priceLabelSuffix = document.getElementById('price-label-suffix');
+    
+    typeSelect.addEventListener('change',()=>{
+        if(typeSelect.value==='unit'){
+            quantityInput.placeholder='1';
+            priceInput.placeholder='1.99';
+            priceLabelSuffix.textContent = '(por Unidade)';
+        }else{
+            quantityInput.placeholder='0.5';
+            priceInput.placeholder='4.99';
+            priceLabelSuffix.textContent = '(por KG)';
+        }
+    });
+
     const renderCart=()=>{const listContainer=document.getElementById('shopping-list'),totalEl=document.getElementById('running-total');listContainer.innerHTML='';if(shoppingCart.length===0){listContainer.innerHTML='<p class="text-gray-500 text-center">Nenhum item adicionado.</p>';}let total=0;shoppingCart.forEach((item,index)=>{const itemDiv=document.createElement('div');itemDiv.className='bg-gray-700/50 p-2 rounded-lg flex justify-between items-center';itemDiv.innerHTML=`<div><p class="font-semibold">${item.name}</p><p class="text-xs text-gray-400">${item.desc}</p></div><div class="flex items-center"><span class="font-bold text-white mr-4">${item.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span><button data-index="${index}" class="icon-btn delete-item-btn"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;listContainer.appendChild(itemDiv);total+=item.total;});totalEl.textContent=total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});};
-    document.getElementById('add-item-btn').addEventListener('click',()=>{const name=nameInput.value.trim(),type=typeSelect.value,quantity=parseFloat(quantityInput.value),price=parseFloat(priceInput.value);if(!name||isNaN(quantity)||quantity<=0||isNaN(price)||price<=0){alert("Por favor, preencha todos os campos corretamente.");return;}let itemTotal=0,itemDesc='';if(type==='unit'){itemTotal=quantity*price;itemDesc=`${quantity} un. x ${price.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;}else{itemTotal=quantity*price;itemDesc=`${quantity.toFixed(3)} kg x ${price.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}/kg`;}shoppingCart.push({name,desc:itemDesc,total:itemTotal});renderCart();nameInput.value='';quantityInput.value='';priceInput.value='';nameInput.focus();});
+    
+    document.getElementById('add-item-btn').addEventListener('click',()=>{const name=nameInput.value.trim(),type=typeSelect.value,quantity=parseFloat(quantityInput.value),price=parseFloat(priceInput.value);if(!name||isNaN(quantity)||quantity<=0||isNaN(price)||price<=0){
+        const btn = document.getElementById('add-item-btn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Preencha todos os campos!';
+        btn.classList.add('bg-red-500');
+        setTimeout(() => {
+             btn.textContent = originalText;
+             btn.classList.remove('bg-red-500');
+        }, 2000);
+        return;
+    }let itemTotal=0,itemDesc='';if(type==='unit'){itemTotal=quantity*price;itemDesc=`${quantity} un. x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}`;}else{itemTotal=quantity*price;itemDesc=`${quantity.toFixed(3)} kg x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}/kg`;}shoppingCart.push({name,desc:itemDesc,total:itemTotal});renderCart();nameInput.value='';quantityInput.value='';priceInput.value='';nameInput.focus();});
+    
     document.getElementById('shopping-list').addEventListener('click',e=>{if(e.target.closest('.delete-item-btn')){const index=parseInt(e.target.closest('.delete-item-btn').dataset.index);shoppingCart.splice(index,1);renderCart();}});
-    document.getElementById('cancel-supermarket').addEventListener('click',()=>modalContainer.innerHTML='');
-    document.getElementById('save-supermarket').addEventListener('click',async()=>{if(shoppingCart.length===0)return;const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{desc:'Compras de Supermercado',amount:totalAmount,type:'despesa',timestamp:serverTimestamp(),items:shoppingCart});modalContainer.innerHTML='';});
+    
+    document.getElementById('cancel-supermarket').addEventListener('click', closeSupermarketPage);
+    document.getElementById('save-supermarket').addEventListener('click',async()=>{
+        if(shoppingCart.length===0)return;
+        const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
+        await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{desc:'Compras de Supermercado',amount:totalAmount,type:'despesa',timestamp:serverTimestamp(),items:shoppingCart});
+        closeSupermarketPage();
+    });
 }
 
 function showItemizedListModal(items) {
@@ -213,14 +620,33 @@ function showItemizedListModal(items) {
     document.getElementById('close-item-list').addEventListener('click', () => modalContainer.innerHTML = '');
 }
 
+// Função generatePDF() REMOVIDA
+
 // --- PONTO DE ENTRADA PRINCIPAL ---
 onAuthStateChanged(auth, user => {
-  if (unsubscribeFromTransactions) unsubscribeFromTransactions();
-  if (user) { showApp(user); setupApp(); } 
-  else { showAuth(); }
+  if (unsubscribeFromTransactions) {
+      unsubscribeFromTransactions();
+      unsubscribeFromTransactions = null;
+  }
+  if (user) { 
+      showApp(user); 
+      setupApp();
+  } 
+  else { 
+      showAuth();
+      if (financeChartInstance) {
+          financeChartInstance.destroy();
+          financeChartInstance = null;
+      }
+      if (transactionHistory) transactionHistory.innerHTML = '<p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p>';
+      if (summaryIncome) summaryIncome.textContent = 'R$ 0,00';
+      if (summaryExpense) summaryExpense.textContent = 'R$ 0,00';
+      if (summaryBalance) summaryBalance.textContent = 'R$ 0,00';
+  }
 });
 
 </script>
 </body>
 </html>
+
 
