@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meu Orçamento PRO</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Biblioteca jsPDF REMOVIDA -->
-<!-- Adicionada biblioteca Chart.js para gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +41,6 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
   <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
     <!-- Filtros e Resumo -->
     <div class="mb-8 space-y-6">
-      <!-- Botão PDF REMOVIDO daqui -->
       <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 glass-card p-3 rounded-2xl">
         <label for="month-filter" class="font-semibold text-gray-300">Ver Orçamento de:</label>
         <select id="month-filter" class="p-2 border-none rounded-lg"></select>
@@ -65,7 +62,10 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
     <!-- Botões de Ação Principal -->
     <div class="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4"><button data-action="show-income-modal" class="w-full flex items-center justify-center space-x-3 bg-green-500 text-white font-bold py-3 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">➕</span><span>Adicionar Receita</span></button><button data-action="add-salary" class="w-full flex items-center justify-center space-x-3 bg-green-700 text-white font-bold py-3 px-4 rounded-xl btn-glow text-lg"><span class="text-2xl">💼</span><span>Adicionar Salário</span></button></div>
     <!-- Adição Rápida de Despesa -->
-    <div class="mb-8"><h3 class="text-xl font-bold text-white mb-4">Adicionar Despesa Rápida</h3><div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div></div>
+    <div class="mb-8">
+      <h3 class="text-xl font-bold text-white mb-4">Adicionar Despesas</h3>
+      <div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div>
+    </div>
     <!-- Histórico de Transações -->
     <div><h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2><div id="transactionHistory" class="space-y-3"><p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p></div></div>
   </main>
@@ -102,7 +102,6 @@ try {
 let monthFilter, yearFilter, transactionHistory, summaryIncome, summaryExpense, summaryBalance, quickAddContainer, noTransactionsMsg;
 const modalContainer = document.getElementById('modalContainer');
 const modalPageContainer = document.getElementById('modalPageContainer'); 
-// Variável currentMonthTransactions REMOVIDA
 let financeChartInstance = null;
 
 function initializeAppDOMElements() {
@@ -136,7 +135,6 @@ function showAuth(){
     document.getElementById('modalPageContainer').classList.add('hidden');
     document.getElementById('authContainer').classList.remove('hidden'); 
     
-    // Espaçamento corrigido
     document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in">
         <div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Orçamento Familiar</h1><p class="text-cyan-400">Controle as suas finanças com facilidade</p></div>
         <input type="email" id="loginEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg">
@@ -147,7 +145,7 @@ function showAuth(){
         <p class="text-sm text-right text-gray-400 hover:text-cyan-400 cursor-pointer mt-4 mb-4" id="showForgotPassword">Esqueceu a senha?</p>
         <p id="loginError" class="text-red-400 text-center text-sm mb-4 h-5"></p>
         <button id="loginBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Entrar</button>
-        <p class="text-sm mt-3 text-center text-gray-400">Não tem uma conta? <span id="showSignup" class="text-cyan-400 cursor-pointer font-semibold">Registe-se</span></p>
+        <p class="text-sm mt-3 text-center text-gray-400">Não tem uma conta? <span id="showSignup" class="text-cyan-400 cursor-pointer font-semibold">Registre-se</span></p>
     </div>`; 
     
     document.getElementById('loginBtn').addEventListener('click', handleLogin); 
@@ -155,7 +153,7 @@ function showAuth(){
     document.getElementById('showForgotPassword').addEventListener('click', showForgotPassword);
 }
 function showSignup(){ 
-    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registar</h1></div><input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Registar</button><p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o login</p></div>`; 
+    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registrar</h1></div><input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Registrar</button><p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o Login</p></div>`; 
     document.getElementById('signupBtn').addEventListener('click', handleSignup); 
     document.getElementById('backLogin').addEventListener('click', showAuth); 
 }
@@ -167,7 +165,7 @@ function showForgotPassword() {
         <input type="email" id="resetEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg">
         <p id="resetMessage" class="text-center text-sm mb-3 h-5"></p>
         <button id="resetBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Enviar Link</button>
-        <p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o login</p>
+        <p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o Login</p>
     </div>`;
     document.getElementById('resetBtn').addEventListener('click', handleForgotPassword);
     document.getElementById('backLogin').addEventListener('click', showAuth);
@@ -181,11 +179,11 @@ async function handleSignup() {
     const errorElement = document.getElementById('signupError');
     errorElement.textContent = '';
     signupBtn.disabled = true;
-    signupBtn.textContent = 'Registando...';
+    signupBtn.textContent = 'Registrando...';
     if (pass.length < 6) {
         errorElement.textContent = 'A senha deve ter pelo menos 6 caracteres.';
         signupBtn.disabled = false;
-        signupBtn.textContent = 'Registar';
+        signupBtn.textContent = 'Registrar';
         return;
     }
     try {
@@ -194,10 +192,10 @@ async function handleSignup() {
         if (e.code === 'auth/email-already-in-use') { errorElement.textContent = 'Este email já está em uso.'; }
         else if (e.code === 'auth/invalid-email') { errorElement.textContent = 'Email inválido.'; }
         else if (e.code === 'auth/weak-password') { errorElement.textContent = 'A senha é muito fraca.'; }
-        else { errorElement.textContent = 'Erro ao registar. Tente novamente.'; }
+        else { errorElement.textContent = 'Erro ao registrar. Tente novamente.'; }
     } finally {
         signupBtn.disabled = false;
-        signupBtn.textContent = 'Registar';
+        signupBtn.textContent = 'Registrar';
     }
 }
 
@@ -264,6 +262,7 @@ function closeTransactionPage() {
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
+// Esta função agora é usada APENAS para RECEITAS
 function showTransactionModal(type, descInitial = ''){ 
     document.getElementById('appContainer').classList.add('hidden');
     
@@ -323,12 +322,11 @@ function updateFinanceChart(income, expense) {
     }
 
     if (income === 0 && expense === 0) {
-        // Opcional: mostrar uma mensagem "Sem dados" no canvas
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#9ca3af'; // Cor de texto cinza
+        ctx.fillStyle = '#9ca3af';
         ctx.font = "16px 'Poppins'";
         ctx.fillText('Sem dados para este mês', ctx.canvas.width / 2, ctx.canvas.height / 2);
         ctx.restore();
@@ -343,14 +341,8 @@ function updateFinanceChart(income, expense) {
             datasets: [{
                 label: 'Movimentações',
                 data: [income, expense],
-                backgroundColor: [
-                    'rgba(52, 211, 153, 0.7)',
-                    'rgba(248, 113, 113, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(16, 185, 129, 1)',
-                    'rgba(239, 68, 68, 1)'
-                ],
+                backgroundColor: [ 'rgba(52, 211, 153, 0.7)', 'rgba(248, 113, 113, 0.7)' ],
+                borderColor: [ 'rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)' ],
                 borderWidth: 1,
                 hoverOffset: 4
             }]
@@ -365,19 +357,14 @@ function updateFinanceChart(income, expense) {
                     labels: {
                         color: '#e5e7eb',
                         padding: 20,
-                        font: {
-                            size: 14,
-                            family: "'Poppins', sans-serif"
-                        }
+                        font: { size: 14, family: "'Poppins', sans-serif" }
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             let label = context.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
+                            if (label) { label += ': '; }
                             if (context.parsed !== null) {
                                 label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed);
                             }
@@ -400,7 +387,6 @@ function listenForTransactions() {
     unsubscribeFromTransactions = onSnapshot(q, (snapshot) => {
         let income = 0, expense = 0, transactionCount = 0;
         transactionHistory.innerHTML = '';
-        // Linhas do currentMonthTransactions REMOVIDAS
         
         const currentMonth = parseInt(monthFilter.value);
         const currentYear = parseInt(yearFilter.value);
@@ -413,7 +399,6 @@ function listenForTransactions() {
             
             if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 transactionCount++;
-                // Linha do currentMonthTransactions.push() REMOVIDA
                 
                 const div = document.createElement('div');
                 div.className = 'glass-card p-3 rounded-lg flex justify-between items-center fade-in';
@@ -452,18 +437,17 @@ function setupApp() {
     
     document.querySelector('[data-action="show-income-modal"]').addEventListener('click', ()=> showTransactionModal('receita'));
     document.querySelector('[data-action="add-salary"]').addEventListener('click', ()=> showTransactionModal('receita', 'Salário'));
-    // Listener do PDF REMOVIDO
 
     const quickAddItems = [ 
-        { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-supermarket' }, 
-        { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Transporte', icon: '🚌', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense' }, 
-        { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense' } 
+        { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
+        { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Transporte', icon: '🚌', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
+        { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense', entryType: 'simple' } 
     ];
     
     quickAddContainer.innerHTML = '';
@@ -474,15 +458,19 @@ function setupApp() {
         btn.dataset.action = item.action;
         btn.dataset.type = item.type;
         btn.dataset.name = item.name;
+        btn.dataset.icon = item.icon;
+        btn.dataset.entryType = item.entryType;
         quickAddContainer.appendChild(btn); 
     });
 
     quickAddContainer.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
-        const { action, type, name } = target.dataset;
-        if (action === 'quick-supermarket') { showSupermarketModal(); } 
-        else if (action === 'quick-expense') { showTransactionModal(type, name); }
+        const { action, name, icon, entryType } = target.dataset;
+        
+        if (action === 'quick-expense') { 
+            showItemizedExpenseModal(name, icon, entryType); 
+        }
     });
     
     transactionHistory.addEventListener('click', (e) => {
@@ -509,51 +497,103 @@ function populateFilters() {
     yearFilter.addEventListener('change', listenForTransactions); 
 }
 
-// --- LÓGICA DO SUPERMERCADO ---
+// --- LÓGICA DE DESPESA DETALHADA ---
 
-function closeSupermarketPage() {
+function closeItemizedExpensePage() {
     modalPageContainer.innerHTML = '';
     modalPageContainer.classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
-function showSupermarketModal() {
+/**
+ * Retorna um placeholder de exemplo baseado na categoria da despesa.
+ * @param {string} category - O nome da categoria (ex: "Supermercado").
+ * @returns {string} - O texto do placeholder (ex: "Ex: Arroz, Feijão").
+ */
+function getPlaceholderForCategory(category) {
+    const placeholderExamples = {
+        'Supermercado': 'Ex: Arroz, Feijão, Leite',
+        'Aluguel': 'Ex: Aluguel Mensal',
+        'Transporte': 'Ex: Passe de Ônibus, Uber',
+        'Farmácia': 'Ex: Dipirona, Band-aid',
+        'Lazer': 'Ex: Cinema, Jantar',
+        'Saúde': 'Ex: Consulta Médica, Exame',
+        'Educação': 'Ex: Mensalidade, Livro',
+        'Comida': 'Ex: Pizza, Lanche',
+        'Outro': 'Ex: Item'
+    };
+    return placeholderExamples[category] || 'Ex: Item'; // Retorna um padrão se a categoria não for encontrada
+}
+
+function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     let shoppingCart = [];
     document.getElementById('appContainer').classList.add('hidden');
     
+    const isFullEntry = entryType === 'full';
+    
+    // --- ATUALIZAÇÃO APLICADA AQUI ---
+    const placeholderText = getPlaceholderForCategory(categoryName);
+    // --- FIM DA ATUALIZAÇÃO ---
+    
+    let inputsHtml = '';
+    if (isFullEntry) {
+        // Formulário COMPLETO (para Supermercado, Comida)
+        inputsHtml = `
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="item-type" class="text-sm font-medium text-gray-300">Tipo</label>
+                    <select id="item-type" class="w-full p-2 rounded-lg mt-1">
+                        <option value="unit">Unidade</option>
+                        <option value="weight">Peso (kg)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="item-quantity" class="text-sm font-medium text-gray-300">Quantidade</label>
+                    <input id="item-quantity" type="number" placeholder="1" class="w-full p-2 rounded-lg mt-1" step="any">
+                </div>
+            </div>
+            <div>
+                <label for="item-price" class="text-sm font-medium text-gray-300">Preço <span id="price-label-suffix">(por Unidade)</span></label>
+                <input id="item-price" type="number" placeholder="1.99" class="w-full p-2 rounded-lg mt-1" step="any">
+            </div>
+        `;
+    } else {
+        // Formulário SIMPLES (para Transporte, Farmácia, etc.)
+        inputsHtml = `
+            <select id="item-type" class="hidden"><option value="unit" selected></option></select>
+            <div class="grid grid-cols-2 gap-3">
+                 <div>
+                    <label for="item-quantity" class="text-sm font-medium text-gray-300">Quantidade</label>
+                    <input id="item-quantity" type="number" value="1" class="w-full p-2 rounded-lg mt-1" step="1">
+                </div>
+                 <div>
+                    <label for="item-price" class="text-sm font-medium text-gray-300">Preço Unitário</label>
+                    <input id="item-price" type="number" placeholder="1.99" class="w-full p-2 rounded-lg mt-1" step="any">
+                </div>
+            </div>
+        `;
+    }
+    
     modalPageContainer.innerHTML = `<div class="bg-gray-800 rounded-2xl w-full max-w-lg glass-card mx-auto my-8 fade-in">
         
-        <h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">🛒 Calculadora de Supermercado</h2>
+        <h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">${categoryIcon} ${categoryName}</h2>
         
         <div>
             <div class="p-4">
                 <div class="space-y-3">
                     <div>
                         <label for="item-name" class="text-sm font-medium text-gray-300">Nome do Item</label>
-                        <input id="item-name" type="text" placeholder="Ex: Arroz" class="w-full p-2 rounded-lg mt-1">
+                        <!-- ATUALIZAÇÃO APLICADA AQUI -->
+                        <input id="item-name" type="text" placeholder="${placeholderText}" class="w-full p-2 rounded-lg mt-1">
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="item-type" class="text-sm font-medium text-gray-300">Tipo</label>
-                            <select id="item-type" class="w-full p-2 rounded-lg mt-1">
-                                <option value="unit">Unidade</option>
-                                <option value="weight">Peso (kg)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="item-quantity" class="text-sm font-medium text-gray-300">Quantidade</label>
-                            <input id="item-quantity" type="number" placeholder="1" class="w-full p-2 rounded-lg mt-1" step="any">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="item-price" class="text-sm font-medium text-gray-300">Preço <span id="price-label-suffix">(por Unidade)</span></label>
-                        <input id="item-price" type="number" placeholder="1.99" class="w-full p-2 rounded-lg mt-1" step="any">
-                    </div>
+                    
+                    ${inputsHtml}
+                    
                 </div>
                 <button id="add-item-btn" class="w-full bg-cyan-600 text-white font-bold py-2 rounded-lg btn-glow mt-4">Adicionar Item</button>
             </div>
             
-            <div id="shopping-list" class="p-4 space-y-2 border-t border-b border-gray-700 max-h-60 overflow-y-auto">
+            <div id="shopping-list" class="p-4 space-y-2 border-t border-b border-gray-700 max-h-80 overflow-y-auto">
                 <p class="text-gray-500 text-center">Nenhum item adicionado.</p>
             </div>
         </div>
@@ -565,7 +605,7 @@ function showSupermarketModal() {
             </div>
             <div class="flex justify-end space-x-2">
                 <button id="cancel-supermarket" class="bg-gray-600 py-2 px-4 rounded-lg font-bold text-white">Cancelar</button>
-                <button id="save-supermarket" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar Compra</button>
+                <button id="save-supermarket" class="bg-green-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Salvar Despesa</button>
             </div>
         </div>
     </div>`;
@@ -574,53 +614,83 @@ function showSupermarketModal() {
     window.scrollTo(0, 0);
     
     const nameInput=document.getElementById('item-name'),typeSelect=document.getElementById('item-type'),quantityInput=document.getElementById('item-quantity'),priceInput=document.getElementById('item-price');
-    const priceLabelSuffix = document.getElementById('price-label-suffix');
     
-    typeSelect.addEventListener('change',()=>{
-        if(typeSelect.value==='unit'){
-            quantityInput.placeholder='1';
-            priceInput.placeholder='1.99';
-            priceLabelSuffix.textContent = '(por Unidade)';
-        }else{
-            quantityInput.placeholder='0.5';
-            priceInput.placeholder='4.99';
-            priceLabelSuffix.textContent = '(por KG)';
-        }
-    });
+    if (isFullEntry) {
+        const priceLabelSuffix = document.getElementById('price-label-suffix');
+        typeSelect.addEventListener('change',()=>{
+            if(typeSelect.value==='unit'){
+                quantityInput.placeholder='1';
+                priceInput.placeholder='1.99';
+                priceLabelSuffix.textContent = '(por Unidade)';
+            }else{
+                quantityInput.placeholder='0.5';
+                priceInput.placeholder='4.99';
+                priceLabelSuffix.textContent = '(por KG)';
+            }
+        });
+    }
 
     const renderCart=()=>{const listContainer=document.getElementById('shopping-list'),totalEl=document.getElementById('running-total');listContainer.innerHTML='';if(shoppingCart.length===0){listContainer.innerHTML='<p class="text-gray-500 text-center">Nenhum item adicionado.</p>';}let total=0;shoppingCart.forEach((item,index)=>{const itemDiv=document.createElement('div');itemDiv.className='bg-gray-700/50 p-2 rounded-lg flex justify-between items-center';itemDiv.innerHTML=`<div><p class="font-semibold">${item.name}</p><p class="text-xs text-gray-400">${item.desc}</p></div><div class="flex items-center"><span class="font-bold text-white mr-4">${item.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span><button data-index="${index}" class="icon-btn delete-item-btn"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`;listContainer.appendChild(itemDiv);total+=item.total;});totalEl.textContent=total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});};
     
-    document.getElementById('add-item-btn').addEventListener('click',()=>{const name=nameInput.value.trim(),type=typeSelect.value,quantity=parseFloat(quantityInput.value),price=parseFloat(priceInput.value);if(!name||isNaN(quantity)||quantity<=0||isNaN(price)||price<=0){
-        const btn = document.getElementById('add-item-btn');
-        const originalText = btn.textContent;
-        btn.textContent = 'Preencha todos os campos!';
-        btn.classList.add('bg-red-500');
-        setTimeout(() => {
-             btn.textContent = originalText;
-             btn.classList.remove('bg-red-500');
-        }, 2000);
-        return;
-    }let itemTotal=0,itemDesc='';if(type==='unit'){itemTotal=quantity*price;itemDesc=`${quantity} un. x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}`;}else{itemTotal=quantity*price;itemDesc=`${quantity.toFixed(3)} kg x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}/kg`;}shoppingCart.push({name,desc:itemDesc,total:itemTotal});renderCart();nameInput.value='';quantityInput.value='';priceInput.value='';nameInput.focus();});
+    document.getElementById('add-item-btn').addEventListener('click',()=>{
+        const name=nameInput.value.trim();
+        const type=typeSelect.value;
+        const quantity=parseFloat(quantityInput.value);
+        const price=parseFloat(priceInput.value);
+        
+        if(!name||isNaN(quantity)||quantity<=0||isNaN(price)||price<=0){
+            const btn = document.getElementById('add-item-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Preencha todos os campos!';
+            btn.classList.add('bg-red-500');
+            setTimeout(() => {
+                 btn.textContent = originalText;
+                 btn.classList.remove('bg-red-500');
+            }, 2000);
+            return;
+        }
+        
+        let itemTotal=0,itemDesc='';
+        if(type==='unit'){
+            itemTotal=quantity*price;
+            itemDesc=`${quantity} un. x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}`;
+        } else {
+            itemTotal=quantity*price;
+            itemDesc=`${quantity.toFixed(3)} kg x ${price.toLocaleString('pt-BR',{style:'currency','currency':'BRL'})}/kg`;
+        }
+        
+        shoppingCart.push({name,desc:itemDesc,total:itemTotal});
+        renderCart();
+        nameInput.value='';
+        quantityInput.value = isFullEntry ? '' : '1';
+        priceInput.value='';
+        nameInput.focus();
+    });
     
     document.getElementById('shopping-list').addEventListener('click',e=>{if(e.target.closest('.delete-item-btn')){const index=parseInt(e.target.closest('.delete-item-btn').dataset.index);shoppingCart.splice(index,1);renderCart();}});
     
-    document.getElementById('cancel-supermarket').addEventListener('click', closeSupermarketPage);
+    document.getElementById('cancel-supermarket').addEventListener('click', closeItemizedExpensePage);
+    
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
-        await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{desc:'Compras de Supermercado',amount:totalAmount,type:'despesa',timestamp:serverTimestamp(),items:shoppingCart});
-        closeSupermarketPage();
+        await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
+            desc: categoryName, 
+            amount:totalAmount,
+            type:'despesa',
+            timestamp:serverTimestamp(),
+            items:shoppingCart 
+        });
+        closeItemizedExpensePage(); 
     });
 }
 
 function showItemizedListModal(items) {
     let listHtml = '', total = 0;
      items.forEach(item => { listHtml += `<div class="bg-gray-700/50 p-2 rounded-lg flex justify-between items-center"><p>${item.name} <span class="text-xs text-gray-400">(${item.desc})</span></p><p class="font-bold">${item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>`; total += item.total; });
-    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class="bg-gray-800 rounded-2xl w-full max-w-md glass-card"><h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">📋 Itens da Compra</h2><div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div><div class="p-4 border-t border-gray-700 flex justify-between items-center font-bold"><span>Total:</span><span>${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div><div class="p-4 pt-0 text-center"><button id="close-item-list" class="bg-gray-600 py-2 px-6 rounded-lg text-white">Fechar</button></div></div></div>`;
+    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class_name="bg-gray-800 rounded-2xl w-full max-w-md glass-card"><h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">📋 Itens da Compra</h2><div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div><div class="p-4 border-t border-gray-700 flex justify-between items-center font-bold"><span>Total:</span><span>${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div><div class="p-4 pt-0 text-center"><button id="close-item-list" class="bg-gray-600 py-2 px-6 rounded-lg text-white">Fechar</button></div></div></div>`;
     document.getElementById('close-item-list').addEventListener('click', () => modalContainer.innerHTML = '');
 }
-
-// Função generatePDF() REMOVIDA
 
 // --- PONTO DE ENTRADA PRINCIPAL ---
 onAuthStateChanged(auth, user => {
