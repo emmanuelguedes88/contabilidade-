@@ -266,6 +266,7 @@ function closeTransactionPage() {
 function showTransactionModal(type, descInitial = ''){ 
     document.getElementById('appContainer').classList.add('hidden');
     
+    // Corrigido 'class_name' para 'class'
     modalPageContainer.innerHTML = `<div class="p-8 max-w-md mx-auto my-12 sm:my-20 glass-card rounded-xl fade-in">
         <h2 class="text-xl font-bold mb-4 text-white">${type==='receita'?'Adicionar Receita':'Adicionar Despesa'}</h2>
         <input id="transDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-lg mb-3" value="${descInitial}"/>
@@ -404,13 +405,31 @@ function listenForTransactions() {
                 div.className = 'glass-card p-3 rounded-lg flex justify-between items-center fade-in';
                 const formattedAmount = data.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 
+                // --- ATUALIZAÇÃO: Adiciona 'data-desc' e 'data-establishment' ao botão de visualização ---
                 let actionButtons = `<button class="icon-btn" data-doc-id="${docId}" data-action="delete"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
                 
                 if (data.items) { 
-                    actionButtons = `<button class="icon-btn view mr-2" data-items='${JSON.stringify(data.items)}' data-action="view-items"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>` + actionButtons; 
+                    actionButtons = `<button class="icon-btn view mr-2" 
+                                        data-items='${JSON.stringify(data.items)}' 
+                                        data-desc="${data.desc}" 
+                                        data-establishment="${data.establishment || ''}" 
+                                        data-action="view-items">
+                                     <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                     </button>` + actionButtons; 
                 }
                 
-                div.innerHTML = `<div><p class="font-semibold">${data.desc}</p><p class="text-xs text-gray-400">${date.toLocaleDateString('pt-BR')}</p></div><div class="flex items-center"><span class="${data.type === 'receita' ? 'text-green-400' : 'text-red-400'} font-bold mr-4">${formattedAmount}</span><div>${actionButtons}</div></div>`;
+                // --- ATUALIZAÇÃO: Constrói o HTML da descrição para incluir o estabelecimento ---
+                let descriptionHtml = `<p class="font-semibold">${data.desc}</p>`;
+                if (data.establishment) {
+                    descriptionHtml += `<p class="text-sm text-cyan-400">${data.establishment}</p>`;
+                }
+                descriptionHtml += `<p class="text-xs text-gray-400">${date.toLocaleDateString('pt-BR')}</p>`;
+                
+                div.innerHTML = `<div>${descriptionHtml}</div>
+                                 <div class="flex items-center">
+                                    <span class="${data.type === 'receita' ? 'text-green-400' : 'text-red-400'} font-bold mr-4">${formattedAmount}</span>
+                                    <div>${actionButtons}</div>
+                                 </div>`;
                 transactionHistory.appendChild(div);
                 
                 if (data.type === 'receita') income += data.amount; 
@@ -476,9 +495,12 @@ function setupApp() {
     transactionHistory.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
-        const { action, docId, items } = target.dataset;
+        // --- ATUALIZAÇÃO: Pega 'desc' e 'establishment' do botão ---
+        const { action, docId, items, desc, establishment } = target.dataset;
         if (action === 'delete') handleDeleteTransaction(docId);
-        if (action === 'view-items') showItemizedListModal(JSON.parse(items));
+        if (action === 'view-items') {
+            showItemizedListModal(JSON.parse(items), desc, establishment);
+        }
     });
 
     populateFilters();
@@ -505,11 +527,6 @@ function closeItemizedExpensePage() {
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
-/**
- * Retorna um placeholder de exemplo baseado na categoria da despesa.
- * @param {string} category - O nome da categoria (ex: "Supermercado").
- * @returns {string} - O texto do placeholder (ex: "Ex: Arroz, Feijão").
- */
 function getPlaceholderForCategory(category) {
     const placeholderExamples = {
         'Supermercado': 'Ex: Arroz, Feijão, Leite',
@@ -522,7 +539,7 @@ function getPlaceholderForCategory(category) {
         'Comida': 'Ex: Pizza, Lanche',
         'Outro': 'Ex: Item'
     };
-    return placeholderExamples[category] || 'Ex: Item'; // Retorna um padrão se a categoria não for encontrada
+    return placeholderExamples[category] || 'Ex: Item';
 }
 
 function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
@@ -530,14 +547,10 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     document.getElementById('appContainer').classList.add('hidden');
     
     const isFullEntry = entryType === 'full';
-    
-    // --- ATUALIZAÇÃO APLICADA AQUI ---
     const placeholderText = getPlaceholderForCategory(categoryName);
-    // --- FIM DA ATUALIZAÇÃO ---
     
     let inputsHtml = '';
     if (isFullEntry) {
-        // Formulário COMPLETO (para Supermercado, Comida)
         inputsHtml = `
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -558,7 +571,6 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
             </div>
         `;
     } else {
-        // Formulário SIMPLES (para Transporte, Farmácia, etc.)
         inputsHtml = `
             <select id="item-type" class="hidden"><option value="unit" selected></option></select>
             <div class="grid grid-cols-2 gap-3">
@@ -574,6 +586,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         `;
     }
     
+    // --- ATUALIZAÇÃO: Adicionado input "item-establishment" ---
     modalPageContainer.innerHTML = `<div class="bg-gray-800 rounded-2xl w-full max-w-lg glass-card mx-auto my-8 fade-in">
         
         <h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">${categoryIcon} ${categoryName}</h2>
@@ -583,9 +596,15 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                 <div class="space-y-3">
                     <div>
                         <label for="item-name" class="text-sm font-medium text-gray-300">Nome do Item</label>
-                        <!-- ATUALIZAÇÃO APLICADA AQUI -->
                         <input id="item-name" type="text" placeholder="${placeholderText}" class="w-full p-2 rounded-lg mt-1">
                     </div>
+
+                    <div>
+                        <label for="item-establishment" class="text-sm font-medium text-gray-300">Estabelecimento (Opcional)</label>
+                        <input id="item-establishment" type="text" placeholder="Ex: Nome da Loja" class="w-full p-2 rounded-lg mt-1">
+                    </div>
+                    
+                    <hr class="border-gray-700/50">
                     
                     ${inputsHtml}
                     
@@ -673,22 +692,47 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
+        
+        // --- ATUALIZAÇÃO: Pega o valor do estabelecimento ---
+        const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
+        
         await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
             desc: categoryName, 
             amount:totalAmount,
             type:'despesa',
             timestamp:serverTimestamp(),
-            items:shoppingCart 
+            items:shoppingCart,
+            establishment: establishment || null // Salva o nome do estabelecimento
         });
         closeItemizedExpensePage(); 
     });
 }
 
-function showItemizedListModal(items) {
+// --- ATUALIZAÇÃO: Aceita 'desc' e 'establishment' ---
+// --- ATUALIZAÇÃO: Remove 'glass-card' e corrige 'class_name' para 'class' ---
+function showItemizedListModal(items, desc, establishment) {
     let listHtml = '', total = 0;
-     items.forEach(item => { listHtml += `<div class="bg-gray-700/50 p-2 rounded-lg flex justify-between items-center"><p>${item.name} <span class="text-xs text-gray-400">(${item.desc})</span></p><p class="font-bold">${item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>`; total += item.total; });
-    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class_name="bg-gray-800 rounded-2xl w-full max-w-md glass-card"><h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">📋 Itens da Compra</h2><div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div><div class="p-4 border-t border-gray-700 flex justify-between items-center font-bold"><span>Total:</span><span>${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div><div class="p-4 pt-0 text-center"><button id="close-item-list" class="bg-gray-600 py-2 px-6 rounded-lg text-white">Fechar</button></div></div></div>`;
+    items.forEach(item => { 
+        listHtml += `<div class="bg-gray-700/50 p-2 rounded-lg flex justify-between items-center"><p>${item.name} <span class="text-xs text-gray-400">(${item.desc})</span></p><p class="font-bold">${item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>`; 
+        total += item.total; 
+    });
+    
+    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700"> <!-- Correção: Fundo sólido -->
+            <div class="p-4 border-b border-gray-700">
+                 <h2 class="text-xl font-bold text-white">📋 ${desc}</h2>
+                 ${establishment ? `<p class="text-cyan-400 mt-1">${establishment}</p>` : ''} <!-- Exibe estabelecimento -->
+            </div>
+            <div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div>
+            <div class="p-4 border-t border-gray-700 flex justify-between items-center font-bold">
+                <span>Total:</span><span>${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            </div>
+            <div class="p-4 pt-0 text-center">
+                <button id="close-item-list" class="bg-gray-600 py-2 px-6 rounded-lg text-white">Fechar</button>
+            </div>
+        </div>
+    </div>`;
     document.getElementById('close-item-list').addEventListener('click', () => modalContainer.innerHTML = '');
 }
 
