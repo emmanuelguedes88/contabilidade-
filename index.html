@@ -66,13 +66,24 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
       <h3 class="text-xl font-bold text-white mb-4">Adicionar Despesas</h3>
       <div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div>
     </div>
-    <!-- Histórico de Transações -->
-    <div><h2 class="text-xl font-bold mb-4 text-white">Histórico de Transações do Mês</h2><div id="transactionHistory" class="space-y-3"><p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p></div></div>
+    
+    <!-- ATUALIZAÇÃO: Seções de Resumo e Histórico separadas -->
+    <div>
+        <h2 class="text-xl font-bold mb-4 text-white">Resumo por Categoria do Mês</h2>
+        <div id="categorySummary" class="space-y-3 mb-6">
+            <p id="no-summary-msg" class="text-gray-500 text-center py-4">Nenhuma categoria para resumir este mês.</p>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4 text-white">Histórico Detalhado do Mês</h2>
+        <div id="transactionHistory" class="space-y-3">
+            <p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p>
+        </div>
+    </div>
   </main>
 </div>
 <!-- Container para "Páginas" de Modais (Supermercado, Transação) -->
 <div id="modalPageContainer" class="hidden"></div>
-<!-- Container para Modais de Confirmação (que não têm inputs) -->
+<!-- Container para Modais de Confirmação e Termos -->
 <div id="modalContainer"></div>
 
 <script type="module">
@@ -100,6 +111,8 @@ try {
 } catch (e) { console.error("Firebase initialization failed:", e); }
 
 let monthFilter, yearFilter, transactionHistory, summaryIncome, summaryExpense, summaryBalance, quickAddContainer, noTransactionsMsg;
+// ATUALIZAÇÃO: Adicionados elementos do novo resumo
+let categorySummary, noSummaryMsg;
 const modalContainer = document.getElementById('modalContainer');
 const modalPageContainer = document.getElementById('modalPageContainer'); 
 let financeChartInstance = null;
@@ -113,6 +126,10 @@ function initializeAppDOMElements() {
     summaryBalance = document.getElementById('summaryBalance');
     quickAddContainer = document.getElementById('quick-add-container');
     noTransactionsMsg = document.getElementById('no-transactions-msg');
+    
+    // ATUALIZAÇÃO: Inicializa novos elementos
+    categorySummary = document.getElementById('categorySummary');
+    noSummaryMsg = document.getElementById('no-summary-msg');
 }
 
 // --- Funções de UI e Autenticação ---
@@ -152,10 +169,40 @@ function showAuth(){
     document.getElementById('showSignup').addEventListener('click', showSignup); 
     document.getElementById('showForgotPassword').addEventListener('click', showForgotPassword);
 }
+
 function showSignup(){ 
-    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in"><div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registrar</h1></div><input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg"><div class="relative mb-3"><input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10"><button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button></div><p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p><button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow">Registrar</button><p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o Login</p></div>`; 
+    document.getElementById('authContainer').innerHTML = `<div class="p-8 max-w-md mx-auto mt-20 glass-card rounded-xl fade-in">
+        <div class="text-center mb-6"><h1 class="text-3xl font-bold text-white">Registrar</h1></div>
+        <input type="email" id="signupEmail" placeholder="Email" class="w-full mb-3 p-2 rounded-lg">
+        <div class="relative mb-3">
+            <input type="password" id="signupPass" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-2 rounded-lg pr-10">
+            <button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button>
+        </div>
+        
+        <div class="flex items-start space-x-3 my-4">
+            <input id="termsCheckbox" type="checkbox" class="mt-1 h-4 w-4 rounded bg-gray-700 border-gray-500 text-cyan-500 focus:ring-cyan-600">
+            <label for="termsCheckbox" class="text-sm text-gray-300">
+                Eu entendo que este é um app privado e concordo com o 
+                <span id="showTerms" class="text-cyan-400 cursor-pointer hover:underline">"nosso combinado"</span> 
+                sobre o uso dos meus dados.
+            </label>
+        </div>
+        
+        <p id="signupError" class="text-red-400 text-center text-sm mb-3 h-5"></p>
+        <button id="signupBtn" class="w-full bg-green-500 py-2 rounded-lg font-bold btn-glow" disabled>Registrar</button>
+        <p class="text-sm mt-3 text-center text-gray-400 cursor-pointer" id="backLogin">Voltar para o Login</p>
+    </div>`; 
+    
+    const signupBtn = document.getElementById('signupBtn');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    
+    termsCheckbox.addEventListener('change', () => {
+        signupBtn.disabled = !termsCheckbox.checked;
+    });
+    
     document.getElementById('signupBtn').addEventListener('click', handleSignup); 
     document.getElementById('backLogin').addEventListener('click', showAuth); 
+    document.getElementById('showTerms').addEventListener('click', showTermsModal); 
 }
 
 function showForgotPassword() {
@@ -248,6 +295,40 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function showTermsModal() {
+    const termsText = `
+        <h3 class="font-bold text-lg text-white mb-2">Nosso "Combinado"</h3>
+        <p class="text-sm text-gray-300 mb-4">Este é um app privado, feito por [SEU NOME] para uso entre amigos.</p>
+        <ul class="space-y-2 list-disc list-inside text-sm text-gray-300">
+            <li>Seus dados (email e transações) são salvos no Google Firebase, uma plataforma segura.</li>
+            <li>As senhas são criptografadas (nem eu consigo ver).</li>
+            <li>As regras do banco de dados impedem que um usuário veja os dados de outro.</li>
+            <li>
+                <strong>Importante:</strong> Como criador do app, eu tenho acesso de "administrador" ao console do Google. 
+                Isso significa que, tecnicamente, eu posso ver seus dados financeiros se eu entrar no banco de dados.
+            </li>
+            <li class="font-semibold text-cyan-400">
+                Ao se registrar, você confia que eu, [SEU NOME], jamais acessarei seus dados sem sua permissão.
+            </li>
+            <li>Se um dia quiser sair, é só me avisar. Eu removerei manually sua conta e todos os seus dados do sistema.</li>
+        </ul>
+    `;
+    
+    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 w-full max-w-md relative fade-in glass-card">
+            ${termsText}
+            <div class="text-right mt-6">
+                <button id="closeTerms" class="bg-cyan-600 py-2 px-5 rounded-lg font-bold text-white btn-glow">Entendi</button>
+            </div>
+        </div>
+    </div>`;
+    
+    document.getElementById('closeTerms').addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+    });
+}
+
+
 function showConfirmationModal(title, message, onConfirm) {
     modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div class="bg-gray-800 rounded-2xl p-6 w-full max-w-sm relative fade-in glass-card"><h2 class="text-xl font-bold mb-2 text-white">${title}</h2><p class="text-gray-300 mb-6">${message}</p><div class="flex justify-end space-x-2"><button id="confirmCancel" class="bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg font-bold text-white transition-colors">Cancelar</button><button id="confirmAction" class="bg-red-500 py-2 px-4 rounded-lg font-bold text-white btn-glow">Confirmar</button></div></div></div>`;
     document.getElementById('confirmCancel').addEventListener('click', () => modalContainer.innerHTML = '');
@@ -262,11 +343,9 @@ function closeTransactionPage() {
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
-// Esta função agora é usada APENAS para RECEITAS
 function showTransactionModal(type, descInitial = ''){ 
     document.getElementById('appContainer').classList.add('hidden');
     
-    // Corrigido 'class_name' para 'class'
     modalPageContainer.innerHTML = `<div class="p-8 max-w-md mx-auto my-12 sm:my-20 glass-card rounded-xl fade-in">
         <h2 class="text-xl font-bold mb-4 text-white">${type==='receita'?'Adicionar Receita':'Adicionar Despesa'}</h2>
         <input id="transDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-lg mb-3" value="${descInitial}"/>
@@ -389,6 +468,9 @@ function listenForTransactions() {
         let income = 0, expense = 0, transactionCount = 0;
         transactionHistory.innerHTML = '';
         
+        // ATUALIZAÇÃO: Objeto para agrupar totais de categorias
+        const categoryTotals = {};
+        
         const currentMonth = parseInt(monthFilter.value);
         const currentYear = parseInt(yearFilter.value);
         
@@ -401,11 +483,11 @@ function listenForTransactions() {
             if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 transactionCount++;
                 
+                // --- Bloco para Histórico Detalhado (sem alteração) ---
                 const div = document.createElement('div');
                 div.className = 'glass-card p-3 rounded-lg flex justify-between items-center fade-in';
                 const formattedAmount = data.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 
-                // --- ATUALIZAÇÃO: Adiciona 'data-desc' e 'data-establishment' ao botão de visualização ---
                 let actionButtons = `<button class="icon-btn" data-doc-id="${docId}" data-action="delete"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
                 
                 if (data.items) { 
@@ -418,7 +500,6 @@ function listenForTransactions() {
                                      </button>` + actionButtons; 
                 }
                 
-                // --- ATUALIZAÇÃO: Constrói o HTML da descrição para incluir o estabelecimento ---
                 let descriptionHtml = `<p class="font-semibold">${data.desc}</p>`;
                 if (data.establishment) {
                     descriptionHtml += `<p class="text-sm text-cyan-400">${data.establishment}</p>`;
@@ -432,19 +513,69 @@ function listenForTransactions() {
                                  </div>`;
                 transactionHistory.appendChild(div);
                 
+                // --- Bloco para Resumo Geral e Gráfico (sem alteração) ---
                 if (data.type === 'receita') income += data.amount; 
                 else expense += data.amount;
+
+                // --- ATUALIZAÇÃO: Lógica para Resumo por Categoria ---
+                const category = data.desc;
+                const type = data.type;
+                const amount = data.amount;
+                
+                if (!categoryTotals[category]) {
+                    categoryTotals[category] = { income: 0, expense: 0 };
+                }
+                
+                if (type === 'receita') {
+                    categoryTotals[category].income += amount;
+                } else {
+                    categoryTotals[category].expense += amount;
+                }
             }
         });
         
+        // --- Renderiza Resumo Geral (sem alteração) ---
         noTransactionsMsg.classList.toggle('hidden', transactionCount > 0);
         summaryIncome.textContent = income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         summaryExpense.textContent = expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const balance = income - expense;
         summaryBalance.textContent = balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         summaryBalance.className = `text-2xl font-bold ${balance >= 0 ? 'text-cyan-400' : 'text-orange-400'}`;
-        
         updateFinanceChart(income, expense);
+        
+        // --- ATUALIZAÇÃO: Renderiza o novo Resumo por Categoria ---
+        categorySummary.innerHTML = ''; // Limpa o resumo anterior
+        let categoryCount = 0;
+        const sortedCategories = Object.keys(categoryTotals).sort(); // Ordena categorias alfabeticamente
+        
+        for (const category of sortedCategories) {
+            const totals = categoryTotals[category];
+            
+            // Adiciona linha para Receita da Categoria (se houver)
+            if (totals.income > 0) {
+                categoryCount++;
+                const formattedAmount = totals.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const div = document.createElement('div');
+                div.className = 'glass-card p-3 rounded-lg flex justify-between items-center';
+                div.innerHTML = `<span class="font-semibold">${category}</span>
+                                 <span class="font-bold text-green-400">${formattedAmount}</span>`;
+                categorySummary.appendChild(div);
+            }
+            
+            // Adiciona linha para Despesa da Categoria (se houver)
+            if (totals.expense > 0) {
+                categoryCount++;
+                const formattedAmount = totals.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const div = document.createElement('div');
+                div.className = 'glass-card p-3 rounded-lg flex justify-between items-center';
+                div.innerHTML = `<span class="font-semibold">${category}</span>
+                                 <span class="font-bold text-red-400">${formattedAmount}</span>`;
+                categorySummary.appendChild(div);
+            }
+        }
+        
+        // Mostra ou esconde a mensagem "Nenhuma categoria"
+        noSummaryMsg.classList.toggle('hidden', categoryCount > 0);
 
     }, (error) => {
         console.error("Erro ao ouvir transações:", error);
@@ -495,7 +626,6 @@ function setupApp() {
     transactionHistory.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
-        // --- ATUALIZAÇÃO: Pega 'desc' e 'establishment' do botão ---
         const { action, docId, items, desc, establishment } = target.dataset;
         if (action === 'delete') handleDeleteTransaction(docId);
         if (action === 'view-items') {
@@ -586,7 +716,6 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         `;
     }
     
-    // --- ATUALIZAÇÃO: Adicionado input "item-establishment" ---
     modalPageContainer.innerHTML = `<div class="bg-gray-800 rounded-2xl w-full max-w-lg glass-card mx-auto my-8 fade-in">
         
         <h2 class="text-xl font-bold p-4 border-b border-gray-700 text-white">${categoryIcon} ${categoryName}</h2>
@@ -693,7 +822,6 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
         
-        // --- ATUALIZAÇÃO: Pega o valor do estabelecimento ---
         const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
         
@@ -703,14 +831,12 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
             type:'despesa',
             timestamp:serverTimestamp(),
             items:shoppingCart,
-            establishment: establishment || null // Salva o nome do estabelecimento
+            establishment: establishment || null
         });
         closeItemizedExpensePage(); 
     });
 }
 
-// --- ATUALIZAÇÃO: Aceita 'desc' e 'establishment' ---
-// --- ATUALIZAÇÃO: Remove 'glass-card' e corrige 'class_name' para 'class' ---
 function showItemizedListModal(items, desc, establishment) {
     let listHtml = '', total = 0;
     items.forEach(item => { 
@@ -719,10 +845,10 @@ function showItemizedListModal(items, desc, establishment) {
     });
     
     modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700"> <!-- Correção: Fundo sólido -->
+        <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700">
             <div class="p-4 border-b border-gray-700">
                  <h2 class="text-xl font-bold text-white">📋 ${desc}</h2>
-                 ${establishment ? `<p class="text-cyan-400 mt-1">${establishment}</p>` : ''} <!-- Exibe estabelecimento -->
+                 ${establishment ? `<p class="text-cyan-400 mt-1">${establishment}</p>` : ''}
             </div>
             <div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div>
             <div class="p-4 border-t border-gray-700 flex justify-between items-center font-bold">
@@ -752,7 +878,10 @@ onAuthStateChanged(auth, user => {
           financeChartInstance.destroy();
           financeChartInstance = null;
       }
+      // ATUALIZAÇÃO: Limpa os dois históricos ao sair
       if (transactionHistory) transactionHistory.innerHTML = '<p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p>';
+      if (categorySummary) categorySummary.innerHTML = '<p id="no-summary-msg" class="text-gray-500 text-center py-4">Nenhuma categoria para resumir este mês.</p>';
+      
       if (summaryIncome) summaryIncome.textContent = 'R$ 0,00';
       if (summaryExpense) summaryExpense.textContent = 'R$ 0,00';
       if (summaryBalance) summaryBalance.textContent = 'R$ 0,00';
