@@ -64,7 +64,6 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
     <!-- Adição Rápida de Despesa -->
     <div class="mb-8">
       <h3 class="text-xl font-bold text-white mb-4">Adicionar Despesas</h3>
-      <!-- ATUALIZAÇÃO AQUI: Classes do grid alteradas para ter menos colunas (botões mais largos) -->
       <div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-4"></div>
     </div>
     
@@ -617,16 +616,19 @@ function setupApp() {
     document.querySelector('[data-action="add-salary"]').addEventListener('click', ()=> showTransactionModal('receita', 'Salário'));
     
     quickAddContainer.innerHTML = '';
-    // --- ATUALIZAÇÃO AQUI ---
-    // Mudei o grid para ter menos colunas (botões mais largos)
+    // Classes do grid
     quickAddContainer.className = 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-4';
-    // --- FIM DA ATUALIZAÇÃO ---
     
     quickAddItems.forEach(item => { 
         const btn = document.createElement('button'); 
-        // Mantive a altura h-28 para dar espaço para o texto
-        btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-2 flex flex-col justify-center btn-glow h-28'; 
-        btn.innerHTML = `<span class="text-3xl pointer-events-none">${item.icon}</span><span class="text-xs mt-2 pointer-events-none text-center whitespace-normal w-full">${item.name}</span>`; 
+        
+        // --- ATUALIZAÇÃO AQUI ---
+        // Adicionado 'items-center' ao botão.
+        btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-2 flex flex-col justify-center items-center btn-glow h-28'; 
+        // Removido 'w-full' do span de texto.
+        btn.innerHTML = `<span class="text-3xl pointer-events-none">${item.icon}</span><span class="text-xs mt-2 pointer-events-none text-center whitespace-normal">${item.name}</span>`; 
+        // --- FIM DA ATUALIZAÇÃO ---
+        
         btn.dataset.action = item.action;
         btn.dataset.type = item.type;
         btn.dataset.name = item.name;
@@ -679,7 +681,6 @@ function closeItemizedExpensePage() {
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
-// --- ATUALIZAÇÃO AQUI ---
 function getPlaceholderForCategory(category) {
     const placeholderExamples = {
         'Supermercado': 'Ex: Arroz, Feijão, Leite',
@@ -687,7 +688,7 @@ function getPlaceholderForCategory(category) {
         'Energia': 'Ex: Conta de Luz',
         'Água': 'Ex: Conta de Água',
         'Internet': 'Ex: Mensalidade Internet',
-        'Cartões': 'Ex: Fatura Nubank, Inter', // NOVO
+        'Cartões': 'Ex: Fatura Nubank, Inter', 
         'Combustível': 'Ex: Gasolina, Etanol', 
         'Farmácia': 'Ex: Dipirona, Band-aid',
         'Lazer': 'Ex: Cinema, Jantar',
@@ -698,7 +699,6 @@ function getPlaceholderForCategory(category) {
     };
     return placeholderExamples[category] || 'Ex: Item';
 }
-// --- FIM DA ATUALIZAÇÃO ---
 
 function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     let shoppingCart = [];
