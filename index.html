@@ -64,14 +64,15 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
     <!-- Adição Rápida de Despesa -->
     <div class="mb-8">
       <h3 class="text-xl font-bold text-white mb-4">Adicionar Despesas</h3>
-      <div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-9 gap-5"></div>
+      <!-- ATUALIZAÇÃO AQUI: Classes do grid alteradas para ter menos colunas (botões mais largos) -->
+      <div id="quick-add-container" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-4"></div>
     </div>
     
-    <!-- ATUALIZAÇÃO: Seções de Resumo e Histórico separadas -->
+    <!-- Seções de Resumo e Histórico separadas -->
     <div>
-        <h2 class="text-xl font-bold mb-4 text-white">Resumo por Categoria do Mês</h2>
-        <div id="categorySummary" class="space-y-3 mb-6">
-            <p id="no-summary-msg" class="text-gray-500 text-center py-4">Nenhuma categoria para resumir este mês.</p>
+        <h2 class="text-xl font-bold mb-4 text-white">Resumo de Despesas do Mês</h2>
+        <div id="categorySummary" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+            <p id="no-summary-msg" class="text-gray-500 text-center py-4 col-span-full">Nenhuma despesa para resumir este mês.</p>
         </div>
 
         <h2 class="text-xl font-bold mb-4 text-white">Histórico Detalhado do Mês</h2>
@@ -111,11 +112,41 @@ try {
 } catch (e) { console.error("Firebase initialization failed:", e); }
 
 let monthFilter, yearFilter, transactionHistory, summaryIncome, summaryExpense, summaryBalance, quickAddContainer, noTransactionsMsg;
-// ATUALIZAÇÃO: Adicionados elementos do novo resumo
 let categorySummary, noSummaryMsg;
 const modalContainer = document.getElementById('modalContainer');
 const modalPageContainer = document.getElementById('modalPageContainer'); 
 let financeChartInstance = null;
+
+const quickAddItems = [ 
+    { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
+    { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Energia', icon: '💡', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Água', icon: '💧', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Internet', icon: '🌐', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Cartões', icon: '💳', type: 'despesa', action: 'quick-expense', entryType: 'simple' },
+    { name: 'Combustível', icon: '⛽', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+    { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
+    { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense', entryType: 'simple' } 
+];
+
+// Nova função para buscar ícones
+function getIconForCategory(categoryName) {
+    const item = quickAddItems.find(i => i.name === categoryName);
+    if (item) {
+        return item.icon;
+    }
+    // Fallback para nomes customizados (como de 'Outro')
+    const salarioItem = categoryName === 'Salário' ? '💼' : null;
+    if (salarioItem) return salarioItem;
+
+    const outroItem = quickAddItems.find(i => i.name === 'Outro');
+    return outroItem ? outroItem.icon : '💸'; // Icone genérico de despesa
+}
+
 
 function initializeAppDOMElements() {
     monthFilter = document.getElementById('month-filter');
@@ -127,7 +158,6 @@ function initializeAppDOMElements() {
     quickAddContainer = document.getElementById('quick-add-container');
     noTransactionsMsg = document.getElementById('no-transactions-msg');
     
-    // ATUALIZAÇÃO: Inicializa novos elementos
     categorySummary = document.getElementById('categorySummary');
     noSummaryMsg = document.getElementById('no-summary-msg');
 }
@@ -468,7 +498,6 @@ function listenForTransactions() {
         let income = 0, expense = 0, transactionCount = 0;
         transactionHistory.innerHTML = '';
         
-        // ATUALIZAÇÃO: Objeto para agrupar totais de categorias
         const categoryTotals = {};
         
         const currentMonth = parseInt(monthFilter.value);
@@ -483,7 +512,7 @@ function listenForTransactions() {
             if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 transactionCount++;
                 
-                // --- Bloco para Histórico Detalhado (sem alteração) ---
+                // --- Bloco para Histórico Detalhado ---
                 const div = document.createElement('div');
                 div.className = 'glass-card p-3 rounded-lg flex justify-between items-center fade-in';
                 const formattedAmount = data.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -513,11 +542,11 @@ function listenForTransactions() {
                                  </div>`;
                 transactionHistory.appendChild(div);
                 
-                // --- Bloco para Resumo Geral e Gráfico (sem alteração) ---
+                // --- Bloco para Resumo Geral e Gráfico ---
                 if (data.type === 'receita') income += data.amount; 
                 else expense += data.amount;
 
-                // --- ATUALIZAÇÃO: Lógica para Resumo por Categoria ---
+                // --- Lógica para Resumo por Categoria ---
                 const category = data.desc;
                 const type = data.type;
                 const amount = data.amount;
@@ -534,7 +563,7 @@ function listenForTransactions() {
             }
         });
         
-        // --- Renderiza Resumo Geral (sem alteração) ---
+        // --- Renderiza Resumo Geral ---
         noTransactionsMsg.classList.toggle('hidden', transactionCount > 0);
         summaryIncome.textContent = income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         summaryExpense.textContent = expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -543,39 +572,38 @@ function listenForTransactions() {
         summaryBalance.className = `text-2xl font-bold ${balance >= 0 ? 'text-cyan-400' : 'text-orange-400'}`;
         updateFinanceChart(income, expense);
         
-        // --- ATUALIZAÇÃO: Renderiza o novo Resumo por Categoria ---
+        // --- Renderiza o novo Resumo por Categoria ---
         categorySummary.innerHTML = ''; // Limpa o resumo anterior
         let categoryCount = 0;
-        const sortedCategories = Object.keys(categoryTotals).sort(); // Ordena categorias alfabeticamente
+        const sortedCategories = Object.keys(categoryTotals).sort(); 
         
+        // Limpa a mensagem de "sem resumo" antes de adicionar novos itens
+        noSummaryMsg.classList.add('hidden');
+
         for (const category of sortedCategories) {
             const totals = categoryTotals[category];
             
-            // Adiciona linha para Receita da Categoria (se houver)
-            if (totals.income > 0) {
-                categoryCount++;
-                const formattedAmount = totals.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                const div = document.createElement('div');
-                div.className = 'glass-card p-3 rounded-lg flex justify-between items-center';
-                div.innerHTML = `<span class="font-semibold">${category}</span>
-                                 <span class="font-bold text-green-400">${formattedAmount}</span>`;
-                categorySummary.appendChild(div);
-            }
-            
-            // Adiciona linha para Despesa da Categoria (se houver)
+            // Mostra apenas despesas
             if (totals.expense > 0) {
                 categoryCount++;
                 const formattedAmount = totals.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const icon = getIconForCategory(category); // Pega o ícone
+                
                 const div = document.createElement('div');
-                div.className = 'glass-card p-3 rounded-lg flex justify-between items-center';
-                div.innerHTML = `<span class="font-semibold">${category}</span>
-                                 <span class="font-bold text-red-400">${formattedAmount}</span>`;
+                div.className = 'glass-card p-4 rounded-xl flex flex-col items-center justify-center text-center h-28';
+                div.innerHTML = `
+                    <span class="text-3xl mb-2">${icon}</span>
+                    <span class="font-semibold text-sm whitespace-normal leading-tight">${category}</span>
+                    <span class="font-bold text-red-400 mt-1">${formattedAmount}</span>
+                `;
                 categorySummary.appendChild(div);
             }
         }
         
         // Mostra ou esconde a mensagem "Nenhuma categoria"
-        noSummaryMsg.classList.toggle('hidden', categoryCount > 0);
+        if(categoryCount === 0) {
+            noSummaryMsg.classList.remove('hidden');
+        }
 
     }, (error) => {
         console.error("Erro ao ouvir transações:", error);
@@ -587,32 +615,18 @@ function setupApp() {
     
     document.querySelector('[data-action="show-income-modal"]').addEventListener('click', ()=> showTransactionModal('receita'));
     document.querySelector('[data-action="add-salary"]').addEventListener('click', ()=> showTransactionModal('receita', 'Salário'));
-
-    // --- ATUALIZAÇÃO AQUI ---
-    const quickAddItems = [ 
-        { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
-        { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Energia', icon: '💡', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Água', icon: '💧', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Internet', icon: '🌐', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Transporte', icon: '🚌', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
-        { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
-        { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense', entryType: 'simple' } 
-    ];
-    // --- FIM DA ATUALIZAÇÃO ---
     
     quickAddContainer.innerHTML = '';
-    // Ajusta o grid para caber mais itens, se necessário
-    quickAddContainer.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 lg:grid-cols-12 gap-4';
+    // --- ATUALIZAÇÃO AQUI ---
+    // Mudei o grid para ter menos colunas (botões mais largos)
+    quickAddContainer.className = 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-4';
+    // --- FIM DA ATUALIZAÇÃO ---
     
     quickAddItems.forEach(item => { 
         const btn = document.createElement('button'); 
-        btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-3 flex flex-col items-center justify-center btn-glow'; 
-        btn.innerHTML = `<span class="text-2xl pointer-events-none">${item.icon}</span><span class="text-xs mt-1 pointer-events-none">${item.name}</span>`; 
+        // Mantive a altura h-28 para dar espaço para o texto
+        btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-2 flex flex-col justify-center btn-glow h-28'; 
+        btn.innerHTML = `<span class="text-3xl pointer-events-none">${item.icon}</span><span class="text-xs mt-2 pointer-events-none text-center whitespace-normal w-full">${item.name}</span>`; 
         btn.dataset.action = item.action;
         btn.dataset.type = item.type;
         btn.dataset.name = item.name;
@@ -673,7 +687,8 @@ function getPlaceholderForCategory(category) {
         'Energia': 'Ex: Conta de Luz',
         'Água': 'Ex: Conta de Água',
         'Internet': 'Ex: Mensalidade Internet',
-        'Transporte': 'Ex: Passe de Ônibus, Uber',
+        'Cartões': 'Ex: Fatura Nubank, Inter', // NOVO
+        'Combustível': 'Ex: Gasolina, Etanol', 
         'Farmácia': 'Ex: Dipirona, Band-aid',
         'Lazer': 'Ex: Cinema, Jantar',
         'Saúde': 'Ex: Consulta Médica, Exame',
@@ -832,22 +847,19 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     
     document.getElementById('cancel-supermarket').addEventListener('click', closeItemizedExpensePage);
     
-    // --- ATUALIZAÇÃO AQUI ---
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
         
         const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
         
-        // MODIFICAÇÃO: Se a categoria for "Outro", usa o nome do item como descrição principal.
         let finalDesc = categoryName;
         if (categoryName === 'Outro' && shoppingCart.length > 0) {
-            // Pega o nome do primeiro item. Para 'simple' entry, só haverá um.
             finalDesc = shoppingCart[0].name; 
         }
 
         await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
-            desc: finalDesc, // Usar a descrição final
+            desc: finalDesc, 
             amount:totalAmount,
             type:'despesa',
             timestamp:serverTimestamp(),
@@ -856,7 +868,6 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         });
         closeItemizedExpensePage(); 
     });
-    // --- FIM DA ATUALIZAÇÃO ---
 }
 
 function showItemizedListModal(items, desc, establishment) {
@@ -900,9 +911,8 @@ onAuthStateChanged(auth, user => {
           financeChartInstance.destroy();
           financeChartInstance = null;
       }
-      // ATUALIZAÇÃO: Limpa os dois históricos ao sair
       if (transactionHistory) transactionHistory.innerHTML = '<p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p>';
-      if (categorySummary) categorySummary.innerHTML = '<p id="no-summary-msg" class="text-gray-500 text-center py-4">Nenhuma categoria para resumir este mês.</p>';
+      if (categorySummary) categorySummary.innerHTML = '<p id="no-summary-msg" class="text-gray-500 text-center py-4 col-span-full">Nenhuma despesa para resumir este mês.</p>';
       
       if (summaryIncome) summaryIncome.textContent = 'R$ 0,00';
       if (summaryExpense) summaryExpense.textContent = 'R$ 0,00';
