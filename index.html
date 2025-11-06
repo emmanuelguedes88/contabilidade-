@@ -588,9 +588,13 @@ function setupApp() {
     document.querySelector('[data-action="show-income-modal"]').addEventListener('click', ()=> showTransactionModal('receita'));
     document.querySelector('[data-action="add-salary"]').addEventListener('click', ()=> showTransactionModal('receita', 'Salário'));
 
+    // --- ATUALIZAÇÃO AQUI ---
     const quickAddItems = [ 
         { name: 'Supermercado', icon: '🛒', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
         { name: 'Aluguel', icon: '🏠', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Energia', icon: '💡', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Água', icon: '💧', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
+        { name: 'Internet', icon: '🌐', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
         { name: 'Transporte', icon: '🚌', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
         { name: 'Farmácia', icon: '💊', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
         { name: 'Lazer', icon: '🎉', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
@@ -599,8 +603,12 @@ function setupApp() {
         { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
         { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense', entryType: 'simple' } 
     ];
+    // --- FIM DA ATUALIZAÇÃO ---
     
     quickAddContainer.innerHTML = '';
+    // Ajusta o grid para caber mais itens, se necessário
+    quickAddContainer.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 lg:grid-cols-12 gap-4';
+    
     quickAddItems.forEach(item => { 
         const btn = document.createElement('button'); 
         btn.className = 'bg-gray-700 hover:bg-gray-600 rounded-lg p-3 flex flex-col items-center justify-center btn-glow'; 
@@ -657,20 +665,25 @@ function closeItemizedExpensePage() {
     document.getElementById('appContainer').classList.remove('hidden');
 }
 
+// --- ATUALIZAÇÃO AQUI ---
 function getPlaceholderForCategory(category) {
     const placeholderExamples = {
         'Supermercado': 'Ex: Arroz, Feijão, Leite',
         'Aluguel': 'Ex: Aluguel Mensal',
+        'Energia': 'Ex: Conta de Luz',
+        'Água': 'Ex: Conta de Água',
+        'Internet': 'Ex: Mensalidade Internet',
         'Transporte': 'Ex: Passe de Ônibus, Uber',
         'Farmácia': 'Ex: Dipirona, Band-aid',
         'Lazer': 'Ex: Cinema, Jantar',
         'Saúde': 'Ex: Consulta Médica, Exame',
         'Educação': 'Ex: Mensalidade, Livro',
         'Comida': 'Ex: Pizza, Lanche',
-        'Outro': 'Ex: Item'
+        'Outro': 'Ex: Presente, Dívida'
     };
     return placeholderExamples[category] || 'Ex: Item';
 }
+// --- FIM DA ATUALIZAÇÃO ---
 
 function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     let shoppingCart = [];
@@ -819,14 +832,22 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     
     document.getElementById('cancel-supermarket').addEventListener('click', closeItemizedExpensePage);
     
+    // --- ATUALIZAÇÃO AQUI ---
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
         
         const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
         
+        // MODIFICAÇÃO: Se a categoria for "Outro", usa o nome do item como descrição principal.
+        let finalDesc = categoryName;
+        if (categoryName === 'Outro' && shoppingCart.length > 0) {
+            // Pega o nome do primeiro item. Para 'simple' entry, só haverá um.
+            finalDesc = shoppingCart[0].name; 
+        }
+
         await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
-            desc: categoryName, 
+            desc: finalDesc, // Usar a descrição final
             amount:totalAmount,
             type:'despesa',
             timestamp:serverTimestamp(),
@@ -835,6 +856,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         });
         closeItemizedExpensePage(); 
     });
+    // --- FIM DA ATUALIZAÇÃO ---
 }
 
 function showItemizedListModal(items, desc, establishment) {
