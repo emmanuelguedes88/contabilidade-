@@ -129,6 +129,10 @@ const quickAddItems = [
     { name: 'Saúde', icon: '❤️', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
     { name: 'Educação', icon: '🎓', type: 'despesa', action: 'quick-expense', entryType: 'simple' }, 
     { name: 'Comida', icon: '🍕', type: 'despesa', action: 'quick-expense', entryType: 'full' }, 
+    { name: 'Celular', icon: '📱', type: 'despesa', action: 'quick-expense', entryType: 'simple' },
+    { name: 'Netflix', icon: '🎬', type: 'despesa', action: 'quick-expense', entryType: 'simple' },
+    { name: 'YouTube', icon: '▶️', type: 'despesa', action: 'quick-expense', entryType: 'simple' },
+    { name: 'Carro', icon: '🚗', type: 'despesa', action: 'quick-expense', entryType: 'simple' },
     { name: 'Outro', icon: '⚙️', type: 'despesa', action: 'quick-expense', entryType: 'simple' } 
 ];
 
@@ -521,22 +525,31 @@ function listenForTransactions() {
                 if (data.items) { 
                     actionButtons = `<button class="icon-btn view mr-2" 
                                         data-items='${JSON.stringify(data.items)}' 
-                                        data-desc="${data.desc}" 
+                                        data-desc="${data.desc}"
+                                        data-card="${data.cardName || ''}" 
                                         data-establishment="${data.establishment || ''}" 
                                         data-action="view-items">
                                      <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                                      </button>` + actionButtons; 
                 }
                 
-                let descriptionHtml = `<p class="font-semibold">${data.desc}</p>`;
-                if (data.establishment) {
-                    descriptionHtml += `<p class="text-sm text-cyan-400">${data.establishment}</p>`;
+                let descriptionHtml = '';
+                // SE TEM NOME DO CARTÃO (Bradesco, etc), MOSTRA EM DESTAQUE
+                if (data.cardName) {
+                     descriptionHtml += `<p class="font-semibold text-cyan-400">${data.cardName}</p>`;
+                     descriptionHtml += `<p class="text-sm text-gray-300">${data.desc}</p>`;
+                } else {
+                     descriptionHtml += `<p class="font-semibold">${data.desc}</p>`;
                 }
-                descriptionHtml += `<p class="text-xs text-gray-400">${date.toLocaleDateString('pt-BR')}</p>`;
+
+                if (data.establishment) {
+                    descriptionHtml += `<p class="text-xs text-gray-500 italic">${data.establishment}</p>`;
+                }
+                descriptionHtml += `<p class="text-[10px] text-gray-600">${date.toLocaleDateString('pt-BR')}</p>`;
                 
                 div.innerHTML = `<div>${descriptionHtml}</div>
                                  <div class="flex items-center">
-                                    <span class="${data.type === 'receita' ? 'text-green-400' : 'text-red-400'} font-bold mr-4">${formattedAmount}</span>
+                                    <span class="${data.type === 'receita' ? 'text-green-400' : 'text-red-400'} font-bold mr-4 text-sm sm:text-base">${formattedAmount}</span>
                                     <div>${actionButtons}</div>
                                  </div>`;
                 transactionHistory.appendChild(div);
@@ -586,8 +599,20 @@ function listenForTransactions() {
             if (totals.expense > 0) {
                 categoryCount++;
                 const formattedAmount = totals.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                const icon = getIconForCategory(category); // Pega o ícone
                 
+                // Tenta extrair o nome base caso seja parcelado para pegar o ícone correto
+                let baseCategoryName = category;
+                if (category.includes('(') && category.includes('/')) {
+                   baseCategoryName = category.split(' (')[0];
+                }
+                
+                // Se o nome não estiver na lista (ex: nome do item em 'Outro' ou 'Cartões'), tenta achar ícone genérico ou do grupo
+                let icon = getIconForCategory(baseCategoryName);
+                if (icon === '💸' && baseCategoryName !== 'Outro') {
+                    // Tenta ver se originalmente era Cartões ou Outro, mas aqui não temos essa info fácil.
+                    // O getIconForCategory já tem fallback.
+                }
+
                 const div = document.createElement('div');
                 div.className = 'glass-card p-4 rounded-xl flex flex-col items-center justify-center text-center h-28';
                 div.innerHTML = `
@@ -650,10 +675,10 @@ function setupApp() {
     transactionHistory.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
-        const { action, docId, items, desc, establishment } = target.dataset;
+        const { action, docId, items, desc, card, establishment } = target.dataset;
         if (action === 'delete') handleDeleteTransaction(docId);
         if (action === 'view-items') {
-            showItemizedListModal(JSON.parse(items), desc, establishment);
+            showItemizedListModal(JSON.parse(items), desc, establishment, card);
         }
     });
 
@@ -688,13 +713,17 @@ function getPlaceholderForCategory(category) {
         'Energia': 'Ex: Conta de Luz',
         'Água': 'Ex: Conta de Água',
         'Internet': 'Ex: Mensalidade Internet',
-        'Cartões': 'Ex: Fatura Nubank, Inter', 
+        'Cartões': 'Ex: TV, Jantar, Uber', 
         'Combustível': 'Ex: Gasolina, Etanol', 
         'Farmácia': 'Ex: Dipirona, Band-aid',
         'Lazer': 'Ex: Cinema, Jantar',
         'Saúde': 'Ex: Consulta Médica, Exame',
         'Educação': 'Ex: Mensalidade, Livro',
         'Comida': 'Ex: Pizza, Lanche',
+        'Celular': 'Ex: Recarga, Conta',
+        'Netflix': 'Ex: Assinatura Mensal',
+        'YouTube': 'Ex: YouTube Premium',
+        'Carro': 'Ex: Manutenção, Peça',
         'Outro': 'Ex: Presente, Dívida'
     };
     return placeholderExamples[category] || 'Ex: Item';
@@ -743,6 +772,68 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
             </div>
         `;
     }
+
+    // --- NOVA LÓGICA DE UI DE PARCELAMENTO + SELEÇÃO DE CARTÃO ---
+    let installmentHtml = '';
+    let cardSelectionHtml = '';
+
+    if (categoryName === 'Cartões') {
+        const currentMonthIndex = new Date().getMonth();
+        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        
+        let monthOptions = '';
+        for(let i=0; i<12; i++) {
+            // Calcula índices circulares para os próximos 12 meses
+            const mIndex = (currentMonthIndex + i) % 12;
+            const mName = monthNames[mIndex];
+            const isCurrent = i === 0 ? '(Atual)' : '';
+            monthOptions += `<option value="${i}">${mName} ${isCurrent}</option>`;
+        }
+
+        installmentHtml = `
+            <div id="installment-container" class="mt-4 p-3 bg-gray-700/30 rounded-lg border border-gray-600">
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="is-installment" class="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500 bg-gray-700 border-gray-500">
+                    <label for="is-installment" class="ml-2 text-sm font-medium text-gray-300">Compra Parcelada?</label>
+                </div>
+                <div id="installment-options" class="hidden grid grid-cols-2 gap-3 mt-2 animate-pulse-once">
+                    <div>
+                        <label class="text-xs text-gray-400">Nº Parcelas</label>
+                        <input type="number" id="installment-count" value="2" min="2" max="60" class="w-full p-2 rounded bg-gray-800 border border-gray-600 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">1ª Parcela em:</label>
+                        <select id="installment-start-month" class="w-full p-2 rounded bg-gray-800 border border-gray-600 text-white text-sm">
+                            ${monthOptions}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // HTML para seleção do Banco
+        cardSelectionHtml = `
+            <div class="mb-4">
+                <label class="text-sm font-medium text-gray-300">Banco / Cartão</label>
+                <select id="card-name-select" class="w-full p-2 rounded-lg mt-1">
+                    <option value="Nubank">Nubank</option>
+                    <option value="Bradesco">Bradesco</option>
+                    <option value="Itaú">Itaú</option>
+                    <option value="Santander">Santander</option>
+                    <option value="Inter">Inter</option>
+                    <option value="C6">C6</option>
+                    <option value="Caixa">Caixa</option>
+                    <option value="Banco do Brasil">Banco do Brasil</option>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="XP">XP</option>
+                    <option value="Outro">Outro...</option>
+                </select>
+                <input id="card-name-other" type="text" placeholder="Nome do Cartão" class="w-full p-2 rounded-lg mt-2 hidden" />
+            </div>
+            <hr class="border-gray-700/50 mb-4">
+        `;
+    }
+    // --- FIM DA NOVA LÓGICA ---
     
     modalPageContainer.innerHTML = `<div class="bg-gray-800 rounded-2xl w-full max-w-lg glass-card mx-auto my-8 fade-in">
         
@@ -750,6 +841,9 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         
         <div>
             <div class="p-4">
+                
+                ${cardSelectionHtml}
+
                 <div class="space-y-3">
                     <div>
                         <label for="item-name" class="text-sm font-medium text-gray-300">Nome do Item</label>
@@ -764,6 +858,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                     <hr class="border-gray-700/50">
                     
                     ${inputsHtml}
+                    ${installmentHtml}
                     
                 </div>
                 <button id="add-item-btn" class="w-full bg-cyan-600 text-white font-bold py-2 rounded-lg btn-glow mt-4">Adicionar Item</button>
@@ -788,6 +883,30 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     
     modalPageContainer.classList.remove('hidden');
     window.scrollTo(0, 0);
+
+    // Toggle da visibilidade do parcelamento e do campo Outro Cartão
+    if (categoryName === 'Cartões') {
+        const checkbox = document.getElementById('is-installment');
+        const optionsDiv = document.getElementById('installment-options');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                optionsDiv.classList.remove('hidden');
+            } else {
+                optionsDiv.classList.add('hidden');
+            }
+        });
+
+        const cardSelect = document.getElementById('card-name-select');
+        const cardOtherInput = document.getElementById('card-name-other');
+        cardSelect.addEventListener('change', () => {
+             if (cardSelect.value === 'Outro') {
+                 cardOtherInput.classList.remove('hidden');
+                 cardOtherInput.focus();
+             } else {
+                 cardOtherInput.classList.add('hidden');
+             }
+        });
+    }
     
     const nameInput=document.getElementById('item-name'),typeSelect=document.getElementById('item-type'),quantityInput=document.getElementById('item-quantity'),priceInput=document.getElementById('item-price');
     
@@ -850,37 +969,121 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
     document.getElementById('save-supermarket').addEventListener('click',async()=>{
         if(shoppingCart.length===0)return;
         
+        const saveBtn = document.getElementById('save-supermarket');
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Salvando...";
+
         const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
         
-        let finalDesc = categoryName;
-        if (categoryName === 'Outro' && shoppingCart.length > 0) {
-            finalDesc = shoppingCart[0].name; 
+        // Captura o nome do cartão se for a categoria correta
+        let selectedCardName = null;
+        if (categoryName === 'Cartões') {
+            const select = document.getElementById('card-name-select');
+            if (select) {
+                if (select.value === 'Outro') {
+                    selectedCardName = document.getElementById('card-name-other').value.trim() || 'Cartão';
+                } else {
+                    selectedCardName = select.value;
+                }
+            }
         }
 
-        await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
-            desc: finalDesc, 
-            amount:totalAmount,
-            type:'despesa',
-            timestamp:serverTimestamp(),
-            items:shoppingCart,
-            establishment: establishment || null
-        });
+        // --- LOGICA DE PARCELAMENTO ---
+        const isInstallment = document.getElementById('is-installment')?.checked;
+
+        if (categoryName === 'Cartões' && isInstallment) {
+            try {
+                const parcels = parseInt(document.getElementById('installment-count').value);
+                const startMonthOffset = parseInt(document.getElementById('installment-start-month').value);
+                
+                // Validações básicas
+                if (parcels < 2) throw new Error("Mínimo 2 parcelas");
+
+                // Loop para criar N documentos
+                for (let i = 0; i < parcels; i++) {
+                    const parcelNumber = i + 1;
+                    
+                    // Cálculo da data da parcela
+                    const date = new Date();
+                    date.setMonth(date.getMonth() + startMonthOffset + i);
+                    
+                    // Valor da parcela (arredondamento simples, centavos podem variar mas mantendo simples conforme solicitado)
+                    const parcelValue = totalAmount / parcels;
+                    
+                    // Nome base do item principal (se houver Outro/Cartões usa o nome do 1º item)
+                    let baseDesc = categoryName;
+                    if ((categoryName === 'Outro' || categoryName === 'Cartões') && shoppingCart.length > 0) {
+                        baseDesc = shoppingCart[0].name;
+                    }
+                    const finalDesc = `${baseDesc} (${parcelNumber}/${parcels})`;
+
+                    // Criação dos items da parcela (ajustando o valor e nome para o detalhe da fatura)
+                    const parcelItems = shoppingCart.map(item => ({
+                        name: `${item.name} (${parcelNumber}/${parcels})`,
+                        desc: item.desc, // Mantém descrição original de qtd/peso
+                        total: item.total / parcels // Valor proporcional da parcela
+                    }));
+
+                    await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
+                        desc: finalDesc, 
+                        amount: parcelValue,
+                        type:'despesa',
+                        timestamp: date, // Usa objeto Date JS para datas futuras
+                        items: parcelItems,
+                        establishment: establishment || null,
+                        cardName: selectedCardName, // Salva o nome do Banco
+                        installment: {
+                            current: parcelNumber,
+                            total: parcels,
+                            totalValue: totalAmount
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Erro ao salvar parcelamento:", err);
+            }
+        } else {
+            // --- LÓGICA ORIGINAL (À VISTA) ---
+            let finalDesc = categoryName;
+            if (categoryName === 'Outro' && shoppingCart.length > 0) {
+                finalDesc = shoppingCart[0].name; 
+            }
+            if (categoryName === 'Cartões' && shoppingCart.length > 0) {
+                // Se for cartão à vista, usa o nome do primeiro item como descrição para ficar mais claro
+                finalDesc = shoppingCart[0].name;
+            }
+
+            await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
+                desc: finalDesc, 
+                amount:totalAmount,
+                type:'despesa',
+                timestamp:serverTimestamp(),
+                items:shoppingCart,
+                cardName: selectedCardName, // Salva o nome do Banco (se aplicável)
+                establishment: establishment || null
+            });
+        }
+        
+        saveBtn.disabled = false;
         closeItemizedExpensePage(); 
     });
 }
 
-function showItemizedListModal(items, desc, establishment) {
+function showItemizedListModal(items, desc, establishment, cardName) {
     let listHtml = '', total = 0;
     items.forEach(item => { 
         listHtml += `<div class="bg-gray-700/50 p-2 rounded-lg flex justify-between items-center"><p>${item.name} <span class="text-xs text-gray-400">(${item.desc})</span></p><p class="font-bold">${item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>`; 
         total += item.total; 
     });
     
+    // Mostra o nome do cartão no título se existir, senão usa a descrição normal
+    const titleText = cardName ? `${cardName} <span class="text-sm font-normal text-gray-400">| ${desc}</span>` : desc;
+
     modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
         <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700">
             <div class="p-4 border-b border-gray-700">
-                 <h2 class="text-xl font-bold text-white">📋 ${desc}</h2>
+                 <h2 class="text-xl font-bold text-white">📋 ${titleText}</h2>
                  ${establishment ? `<p class="text-cyan-400 mt-1">${establishment}</p>` : ''}
             </div>
             <div class="p-4 space-y-2 max-h-[60vh] overflow-y-auto">${listHtml}</div>
