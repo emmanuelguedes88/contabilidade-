@@ -698,7 +698,11 @@ function listenForTransactions() {
                 let descriptionHtml = '';
                 // SE TEM NOME DO CARTÃO (Bradesco, etc), MOSTRA EM DESTAQUE
                 if (data.cardName) {
-                     descriptionHtml += `<p class="font-semibold text-cyan-400">${data.cardName}</p>`;
+                     let cardDisplayName = data.cardName;
+                     if (data.cardOwner) {
+                         cardDisplayName += ` (${data.cardOwner})`;
+                     }
+                     descriptionHtml += `<p class="font-semibold text-cyan-400">${cardDisplayName}</p>`;
                      descriptionHtml += `<p class="text-sm text-gray-300">${data.desc}</p>`;
                 } else {
                      descriptionHtml += `<p class="font-semibold">${data.desc}</p>`;
@@ -735,8 +739,12 @@ function listenForTransactions() {
                     categoryTotals[category].expense += amount;
                     
                     if (data.cardName) {
-                        if (!cardTotals[data.cardName]) cardTotals[data.cardName] = 0;
-                        cardTotals[data.cardName] += amount;
+                        let key = data.cardName;
+                        // Se tiver dono, cria uma chave separada "Santander (Emmanuel)"
+                        if (data.cardOwner) key += ` (${data.cardOwner})`;
+                        
+                        if (!cardTotals[key]) cardTotals[key] = 0;
+                        cardTotals[key] += amount;
                     }
                 }
             }
@@ -1002,7 +1010,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
             </div>
         `;
 
-        // HTML para seleção do Banco + Melhor Dia
+        // HTML para seleção do Banco + Melhor Dia + Titular
         cardSelectionHtml = `
             <div class="mb-4">
                 <label class="text-sm font-medium text-gray-300">Banco / Cartão</label>
@@ -1029,6 +1037,11 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                          <label class="text-[10px] text-gray-400 block mb-1">Melhor Dia</label>
                          <input id="card-best-day" type="number" min="1" max="31" placeholder="Dia" class="w-full p-2 rounded-lg bg-gray-700 border-gray-600 text-white text-sm" />
                     </div>
+                </div>
+
+                <div class="mt-2">
+                    <label class="text-sm font-medium text-gray-300">Titular do Cartão (Opcional)</label>
+                    <input id="card-owner" type="text" placeholder="Ex: Emmanuel" class="w-full p-2 rounded-lg mt-1">
                 </div>
             </div>
             <hr class="border-gray-700/50 mb-4">
@@ -1177,8 +1190,10 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
         const establishment = document.getElementById('item-establishment').value.trim();
         const totalAmount=shoppingCart.reduce((sum,item)=>sum+item.total,0);
         
-        // Captura o nome do cartão se for a categoria correta
+        // Captura o nome do cartão e o TITULAR (NOVO)
         let selectedCardName = null;
+        let cardOwner = null;
+
         if (categoryName === 'Cartões') {
             const select = document.getElementById('card-name-select');
             if (select) {
@@ -1188,6 +1203,8 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                     selectedCardName = select.value;
                 }
             }
+            // Captura o titular
+            cardOwner = document.getElementById('card-owner')?.value.trim() || null;
         }
 
         // --- LOGICA DE PARCELAMENTO ---
@@ -1234,6 +1251,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                         items: parcelItems,
                         establishment: establishment || null,
                         cardName: selectedCardName, // Salva o nome do Banco
+                        cardOwner: cardOwner, // NOVO: Salva o titular
                         installment: {
                             current: parcelNumber,
                             total: parcels,
@@ -1278,6 +1296,7 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                 timestamp: transactionDate, // Usa a data calculada
                 items:shoppingCart,
                 cardName: selectedCardName, // Salva o nome do Banco (se aplicável)
+                cardOwner: cardOwner, // NOVO: Salva o titular
                 establishment: establishment || null
             });
         }
