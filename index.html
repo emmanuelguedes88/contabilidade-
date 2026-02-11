@@ -74,6 +74,12 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
             <p id="no-summary-msg" class="text-gray-500 text-center py-4 col-span-full">Nenhuma despesa para resumir este mês.</p>
         </div>
 
+        <!-- NOVO: Container para Resumo por Cartão -->
+        <div id="cardSummaryContainer" class="hidden mb-6">
+            <h2 class="text-xl font-bold mb-4 text-white">Resumo por Cartão</h2>
+            <div id="cardSummary" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+        </div>
+
         <h2 class="text-xl font-bold mb-4 text-white">Histórico Detalhado do Mês</h2>
         <div id="transactionHistory" class="space-y-3">
             <p id="no-transactions-msg" class="text-gray-500 text-center py-4">Nenhuma transação registada neste mês.</p>
@@ -112,6 +118,9 @@ try {
 
 let monthFilter, yearFilter, transactionHistory, summaryIncome, summaryExpense, summaryBalance, quickAddContainer, noTransactionsMsg;
 let categorySummary, noSummaryMsg;
+// NOVAS VARIÁVEIS GLOBAIS
+let cardSummary, cardSummaryContainer;
+
 const modalContainer = document.getElementById('modalContainer');
 const modalPageContainer = document.getElementById('modalPageContainer'); 
 let financeChartInstance = null;
@@ -163,6 +172,10 @@ function initializeAppDOMElements() {
     
     categorySummary = document.getElementById('categorySummary');
     noSummaryMsg = document.getElementById('no-summary-msg');
+    
+    // Inicialização dos novos elementos de resumo por cartão
+    cardSummary = document.getElementById('cardSummary');
+    cardSummaryContainer = document.getElementById('cardSummaryContainer');
 }
 
 // --- Funções de UI e Autenticação ---
@@ -502,6 +515,7 @@ function listenForTransactions() {
         transactionHistory.innerHTML = '';
         
         const categoryTotals = {};
+        const cardTotals = {}; 
         
         const currentMonth = parseInt(monthFilter.value);
         const currentYear = parseInt(yearFilter.value);
@@ -571,6 +585,11 @@ function listenForTransactions() {
                     categoryTotals[category].income += amount;
                 } else {
                     categoryTotals[category].expense += amount;
+                    
+                    if (data.cardName) {
+                        if (!cardTotals[data.cardName]) cardTotals[data.cardName] = 0;
+                        cardTotals[data.cardName] += amount;
+                    }
                 }
             }
         });
@@ -584,7 +603,7 @@ function listenForTransactions() {
         summaryBalance.className = `text-2xl font-bold ${balance >= 0 ? 'text-cyan-400' : 'text-orange-400'}`;
         updateFinanceChart(income, expense);
         
-        // --- Renderiza o novo Resumo por Categoria ---
+        // --- Renderiza o Resumo por Categoria ---
         categorySummary.innerHTML = ''; // Limpa o resumo anterior
         let categoryCount = 0;
         const sortedCategories = Object.keys(categoryTotals).sort(); 
@@ -614,7 +633,8 @@ function listenForTransactions() {
                 }
 
                 const div = document.createElement('div');
-                div.className = 'glass-card p-4 rounded-xl flex flex-col items-center justify-center text-center h-28';
+                // UPDATE CSS: min-h e break-words
+                div.className = 'glass-card p-2 rounded-xl flex flex-col items-center justify-center text-center min-h-[7rem] h-auto break-words';
                 div.innerHTML = `
                     <span class="text-3xl mb-2">${icon}</span>
                     <span class="font-semibold text-sm whitespace-normal leading-tight">${category}</span>
@@ -627,6 +647,29 @@ function listenForTransactions() {
         // Mostra ou esconde a mensagem "Nenhuma categoria"
         if(categoryCount === 0) {
             noSummaryMsg.classList.remove('hidden');
+        }
+
+        // --- Renderiza Resumo por Cartão ---
+        cardSummary.innerHTML = '';
+        let hasCards = false;
+        Object.keys(cardTotals).sort().forEach(card => {
+            hasCards = true;
+            const total = cardTotals[card];
+            const div = document.createElement('div');
+            // UPDATE CSS: min-h e break-words
+            div.className = 'glass-card p-2 rounded-xl flex flex-col items-center justify-center text-center min-h-[7rem] h-auto break-words border-l-4 border-cyan-500'; 
+            div.innerHTML = `
+                <span class="text-2xl mb-1">💳</span>
+                <span class="font-semibold text-sm">${card}</span>
+                <span class="font-bold text-white mt-1">${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+            `;
+            cardSummary.appendChild(div);
+        });
+
+        if (hasCards) {
+            cardSummaryContainer.classList.remove('hidden');
+        } else {
+            cardSummaryContainer.classList.add('hidden');
         }
 
     }, (error) => {
@@ -811,13 +854,14 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
             </div>
         `;
 
-        // HTML para seleção do Banco
+        // HTML para seleção do Banco + Melhor Dia
         cardSelectionHtml = `
             <div class="mb-4">
                 <label class="text-sm font-medium text-gray-300">Banco / Cartão</label>
                 <select id="card-name-select" class="w-full p-2 rounded-lg mt-1">
                     <option value="Nubank">Nubank</option>
                     <option value="Bradesco">Bradesco</option>
+                    <option value="PicPay">PicPay</option>
                     <option value="Itaú">Itaú</option>
                     <option value="Santander">Santander</option>
                     <option value="Inter">Inter</option>
@@ -828,7 +872,16 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                     <option value="XP">XP</option>
                     <option value="Outro">Outro...</option>
                 </select>
-                <input id="card-name-other" type="text" placeholder="Nome do Cartão" class="w-full p-2 rounded-lg mt-2 hidden" />
+                
+                <div class="flex space-x-2 mt-2">
+                    <div class="w-2/3">
+                        <input id="card-name-other" type="text" placeholder="Nome do Cartão" class="w-full p-2 rounded-lg bg-gray-700 border-gray-600 text-white hidden" />
+                    </div>
+                    <div class="w-1/3">
+                         <label class="text-[10px] text-gray-400 block mb-1">Melhor Dia</label>
+                         <input id="card-best-day" type="number" min="1" max="31" placeholder="Dia" class="w-full p-2 rounded-lg bg-gray-700 border-gray-600 text-white text-sm" />
+                    </div>
+                </div>
             </div>
             <hr class="border-gray-700/50 mb-4">
         `;
@@ -1054,11 +1107,27 @@ function showItemizedExpenseModal(categoryName, categoryIcon, entryType) {
                 finalDesc = shoppingCart[0].name;
             }
 
+            // --- Lógica Melhor Dia de Compra (Só para à vista/automático) ---
+            let transactionDate = new Date(); // Padrão HOJE
+            
+            if (categoryName === 'Cartões') {
+                const bestDayInput = document.getElementById('card-best-day');
+                if (bestDayInput && bestDayInput.value) {
+                     const bestDay = parseInt(bestDayInput.value);
+                     const currentDay = transactionDate.getDate();
+                     
+                     // Se hoje (ex: 10) for maior ou igual ao melhor dia (ex: 9), joga pro próximo mês
+                     if (currentDay >= bestDay) {
+                         transactionDate.setMonth(transactionDate.getMonth() + 1);
+                     }
+                }
+            }
+
             await addDoc(collection(db,'users',auth.currentUser.uid,'transactions'),{
                 desc: finalDesc, 
                 amount:totalAmount,
                 type:'despesa',
-                timestamp:serverTimestamp(),
+                timestamp: transactionDate, // Usa a data calculada
                 items:shoppingCart,
                 cardName: selectedCardName, // Salva o nome do Banco (se aplicável)
                 establishment: establishment || null
