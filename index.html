@@ -25,6 +25,11 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
 .icon-btn.view:hover { color: #34d399; }
 .password-toggle-btn { position: absolute; inset-y: 0; right: 0; padding-left: 0.75rem; padding-right: 0.75rem; display: flex; align-items: center; color: #9ca3af; transition: color 0.2s; }
 .password-toggle-btn:hover { color: #fff; }
+/* Estilo para a barra de rolagem da política */
+.policy-scroll::-webkit-scrollbar { width: 8px; }
+.policy-scroll::-webkit-scrollbar-track { background: #1f2937; }
+.policy-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+.policy-scroll::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 </style>
 </head>
 <body>
@@ -37,7 +42,20 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
 <!-- Conteúdo da Aplicação -->
 <div id="authContainer"></div>
 <div id="appContainer" class="hidden">
-  <header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg p-4 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span><h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1></div><div class="flex items-center"><span id="userEmail" class="text-gray-400 text-sm hidden sm:block mr-4"></span><button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button></div></header>
+  <header class="sticky top-0 z-30 bg-gray-900/50 backdrop-blur-lg p-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+          <span class="h-10 w-10 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl">🚀</span>
+          <h1 class="text-2xl font-bold text-white tracking-wider">Meu Orçamento</h1>
+      </div>
+      <div class="flex items-center space-x-3">
+          <span id="userEmail" class="text-gray-400 text-sm hidden sm:block"></span>
+          <!-- Botão de Configurações (NOVO) -->
+          <button data-action="open-settings" class="bg-gray-700/80 p-2 rounded-full text-white hover:bg-gray-600 transition-colors" title="Configurações e Privacidade">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <button data-action="logout" class="rounded-full bg-red-500/80 py-2 px-4 text-sm font-semibold text-white btn-glow">Sair</button>
+      </div>
+  </header>
   <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
     <!-- Filtros e Resumo -->
     <div class="mb-8 space-y-6">
@@ -95,8 +113,8 @@ input:focus, select:focus { outline:none; border-color:#14b8a6; box-shadow:0 0 1
 <script type="module">
 // --- CÓDIGO DA APLICAÇÃO ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -225,12 +243,18 @@ function showSignup(){
             <button type="button" data-action="toggle-password" data-target="signupPass" class="password-toggle-btn">${eyeIconSvg}${eyeOffIconSvg}</button>
         </div>
         
-        <div class="flex items-start space-x-3 my-4">
+        <div class="flex items-start space-x-3 my-2">
             <input id="termsCheckbox" type="checkbox" class="mt-1 h-4 w-4 rounded bg-gray-700 border-gray-500 text-cyan-500 focus:ring-cyan-600">
             <label for="termsCheckbox" class="text-sm text-gray-300">
-                Eu entendo que este é um app privado e concordo com o 
-                <span id="showTerms" class="text-cyan-400 cursor-pointer hover:underline">"nosso combinado"</span> 
-                sobre o uso dos meus dados.
+                Concordo com os 
+                <span id="showTerms" class="text-cyan-400 cursor-pointer hover:underline">Termos de Uso</span>.
+            </label>
+        </div>
+
+        <div class="flex items-start space-x-3 mb-4">
+            <input id="lgpdCheckbox" type="checkbox" class="mt-1 h-4 w-4 rounded bg-gray-700 border-gray-500 text-cyan-500 focus:ring-cyan-600">
+            <label for="lgpdCheckbox" class="text-sm text-gray-300">
+                Aceito a <span id="showLgpd" class="text-cyan-400 cursor-pointer hover:underline">Política de Privacidade (LGPD)</span> e autorizo o tratamento dos meus dados.
             </label>
         </div>
         
@@ -241,14 +265,19 @@ function showSignup(){
     
     const signupBtn = document.getElementById('signupBtn');
     const termsCheckbox = document.getElementById('termsCheckbox');
+    const lgpdCheckbox = document.getElementById('lgpdCheckbox');
     
-    termsCheckbox.addEventListener('change', () => {
-        signupBtn.disabled = !termsCheckbox.checked;
-    });
+    function updateSignupButton() {
+        signupBtn.disabled = !(termsCheckbox.checked && lgpdCheckbox.checked);
+    }
+
+    termsCheckbox.addEventListener('change', updateSignupButton);
+    lgpdCheckbox.addEventListener('change', updateSignupButton);
     
     document.getElementById('signupBtn').addEventListener('click', handleSignup); 
     document.getElementById('backLogin').addEventListener('click', showAuth); 
     document.getElementById('showTerms').addEventListener('click', showTermsModal); 
+    document.getElementById('showLgpd').addEventListener('click', showLgpdModal); 
 }
 
 function showForgotPassword() {
@@ -325,6 +354,7 @@ document.addEventListener('click', (e) => {
     if (!target) return;
     const { action, docId, items, target: targetId } = target.dataset;
     if (action === 'logout') signOut(auth);
+    if (action === 'open-settings') showSettingsModal(); // NOVO
     if (action === 'toggle-password') {
         const passwordInput = document.getElementById(targetId);
         const eyeIcon = target.querySelector('[data-icon="eye"]');
@@ -341,22 +371,85 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// --- NOVO: Modal de Configurações ---
+function showSettingsModal() {
+    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 w-full max-w-sm relative fade-in glass-card">
+            <h3 class="font-bold text-lg text-white mb-4">Configurações da Conta</h3>
+            <div class="space-y-3">
+                <button id="viewLgpd" class="w-full text-left p-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-cyan-400 flex justify-between items-center transition-colors">
+                    <span>📜 Ver Política de Privacidade</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <hr class="border-gray-600">
+                <button id="deleteAccountBtn" class="w-full text-left p-3 rounded-lg bg-red-900/30 border border-red-800 hover:bg-red-900/50 text-red-400 flex justify-between items-center transition-colors">
+                    <span>⚠️ Excluir Minha Conta (LGPD)</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>
+            <div class="text-center mt-6">
+                <button id="closeSettings" class="bg-gray-600 py-2 px-6 rounded-lg font-bold text-white hover:bg-gray-500">Fechar</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.getElementById('viewLgpd').addEventListener('click', showLgpdModal);
+    document.getElementById('deleteAccountBtn').addEventListener('click', handleDeleteAccount);
+    document.getElementById('closeSettings').addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+    });
+}
+
+// --- NOVO: Lógica de Exclusão de Conta ---
+async function handleDeleteAccount() {
+    showConfirmationModal('Excluir Conta Permanentemente', 
+    'ATENÇÃO: Esta ação é irreversível. Todos os seus dados, lançamentos e histórico serão apagados imediatamente conforme seu direito à exclusão (LGPD). Tem certeza?', 
+    async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        // Feedback visual imediato
+        modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 text-white">
+            <svg class="animate-spin h-12 w-12 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p>Apagando seus dados...</p>
+        </div>`;
+
+        try {
+            // 1. Excluir todas as transações (Firestore)
+            const q = query(collection(db, 'users', user.uid, 'transactions'));
+            const querySnapshot = await getDocs(q);
+            
+            // Cria um array de promessas para deletar em paralelo
+            const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletePromises);
+
+            // 2. Excluir Usuário (Auth)
+            await deleteUser(user);
+            
+            // O onAuthStateChanged vai lidar com o redirecionamento para login
+            modalContainer.innerHTML = '';
+        } catch (error) {
+            console.error("Erro ao excluir conta:", error);
+            if (error.code === 'auth/requires-recent-login') {
+                modalContainer.innerHTML = '';
+                alert('Por segurança, faça login novamente antes de excluir sua conta.');
+                signOut(auth);
+            } else {
+                modalContainer.innerHTML = '';
+                alert('Erro ao excluir conta. Tente novamente mais tarde.');
+            }
+        }
+    });
+}
+
 function showTermsModal() {
     const termsText = `
-        <h3 class="font-bold text-lg text-white mb-2">Nosso "Combinado"</h3>
-        <p class="text-sm text-gray-300 mb-4">Este é um app privado, feito por [SEU NOME] para uso entre amigos.</p>
+        <h3 class="font-bold text-lg text-white mb-2">Termos de Uso</h3>
+        <p class="text-sm text-gray-300 mb-4">Ao usar este aplicativo, você concorda com o seguinte:</p>
         <ul class="space-y-2 list-disc list-inside text-sm text-gray-300">
-            <li>Seus dados (email e transações) são salvos no Google Firebase, uma plataforma segura.</li>
-            <li>As senhas são criptografadas (nem eu consigo ver).</li>
-            <li>As regras do banco de dados impedem que um usuário veja os dados de outro.</li>
-            <li>
-                <strong>Importante:</strong> Como criador do app, eu tenho acesso de "administrador" ao console do Google. 
-                Isso significa que, tecnicamente, eu posso ver seus dados financeiros se eu entrar no banco de dados.
-            </li>
-            <li class="font-semibold text-cyan-400">
-                Ao se registrar, você confia que eu, [SEU NOME], jamais acessarei seus dados sem sua permissão.
-            </li>
-            <li>Se um dia quiser sair, é só me avisar. Eu removerei manually sua conta e todos os seus dados do sistema.</li>
+            <li>O app é fornecido "como está", para fins de organização financeira pessoal.</li>
+            <li>Você é responsável por manter sua senha segura.</li>
+            <li>Embora utilizemos tecnologia segura (Google Firebase), não nos responsabilizamos por perdas de dados decorrentes de falhas técnicas imprevistas.</li>
         </ul>
     `;
     
@@ -370,6 +463,61 @@ function showTermsModal() {
     </div>`;
     
     document.getElementById('closeTerms').addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+    });
+}
+
+function showLgpdModal() {
+    const lgpdText = `
+        <h3 class="font-bold text-lg text-white mb-4 border-b border-gray-600 pb-2">Política de Privacidade</h3>
+        <div class="text-sm text-gray-300 space-y-4 max-h-[60vh] overflow-y-auto policy-scroll pr-2">
+            <p><strong>Última atualização: 10/02/2026</strong></p>
+            
+            <p>Esta Política de Privacidade descreve como coletamos, usamos e protegemos suas informações, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 - LGPD).</p>
+
+            <h4 class="font-bold text-cyan-400">1. Controlador dos Dados</h4>
+            <p>O controlador dos seus dados é a equipe "Meu Orçamento PRO". Para questões relacionadas a privacidade, contate-nos através do suporte no app.</p>
+
+            <h4 class="font-bold text-cyan-400">2. Dados Coletados</h4>
+            <ul class="list-disc list-inside pl-2">
+                <li><strong>E-mail:</strong> Utilizado exclusivamente para autenticação (login) e recuperação de senha.</li>
+                <li><strong>Dados Financeiros:</strong> Valores, descrições e categorias que você insere voluntariamente no app.</li>
+                <li><strong>Metadados:</strong> Logs de acesso técnico e data de criação da conta (gerados automaticamente pelo Google Firebase).</li>
+            </ul>
+
+            <h4 class="font-bold text-cyan-400">3. Finalidade do Tratamento</h4>
+            <p>Seus dados são tratados estritamente para:</p>
+            <ul class="list-disc list-inside pl-2">
+                <li>Permitir o acesso à sua conta pessoal.</li>
+                <li>Armazenar seu histórico financeiro de forma segura.</li>
+                <li>Gerar gráficos e relatórios de despesas dentro do aplicativo.</li>
+            </ul>
+            <p><strong>Não vendemos nem compartilhamos seus dados pessoais com terceiros para fins de marketing ou publicidade.</strong></p>
+
+            <h4 class="font-bold text-cyan-400">4. Armazenamento e Segurança</h4>
+            <p>Seus dados são armazenados em nuvem utilizando a infraestrutura do Google Firebase (Google LLC), que adota padrões internacionais de segurança e criptografia.</p>
+
+            <h4 class="font-bold text-cyan-400">5. Seus Direitos (Art. 18 da LGPD)</h4>
+            <p>Você tem direito a:</p>
+            <ul class="list-disc list-inside pl-2">
+                <li>Confirmar a existência de tratamento de dados.</li>
+                <li>Acessar seus dados (disponível no app).</li>
+                <li>Corrigir dados incompletos ou desatualizados.</li>
+                <li><strong>Excluir seus dados:</strong> Você pode apagar transações individualmente ou usar a opção "Excluir Conta" nas configurações para remover todos os seus dados permanentemente.</li>
+            </ul>
+        </div>
+    `;
+    
+    modalContainer.innerHTML = `<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 w-full max-w-md relative fade-in glass-card">
+            ${lgpdText}
+            <div class="text-right mt-6 pt-4 border-t border-gray-600">
+                <button id="closeLgpd" class="bg-cyan-600 py-2 px-5 rounded-lg font-bold text-white btn-glow">Entendi</button>
+            </div>
+        </div>
+    </div>`;
+    
+    document.getElementById('closeLgpd').addEventListener('click', () => {
         modalContainer.innerHTML = '';
     });
 }
@@ -1195,5 +1343,3 @@ onAuthStateChanged(auth, user => {
 </script>
 </body>
 </html>
-
-
